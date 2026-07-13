@@ -1,0 +1,1070 @@
+/* ===========================================================
+   AEGIS DESIGN SYSTEM v1.0
+   Foundation
+=========================================================== */
+
+
+/* ===========================================================
+   RESET
+=========================================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+
+/* ===========================================================
+   ROOT
+=========================================================== */
+
+:root{
+
+    --bg:#070B14;
+    --panel:#101827;
+    --panel-2:#172132;
+
+    --border:rgba(255,255,255,.08);
+
+    --text:#F6F8FC;
+    --muted:#8E9AAF;
+
+    --primary:#4F8CFF;
+    --success:#41D18A;
+    --warning:#FFC857;
+    --danger:#FF6B6B;
+
+    --radius:18px;
+
+    --shadow:
+        0 12px 40px rgba(0,0,0,.35);
+
+    --transition:.22s ease;
+
+}
+
+
+/* ===========================================================
+   PAGE
+=========================================================== */
+
+html,
+body,
+.stApp{
+
+    background:var(--bg);
+
+    color:var(--text);
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        sans-serif;
+
+}
+
+
+/* ===========================================================
+   TYPOGRAPHY
+=========================================================== */
+
+h1{
+
+    font-size:2rem;
+
+    font-weight:700;
+
+    letter-spacing:-.03em;
+
+}
+
+h2{
+
+    font-size:1.45rem;
+
+    font-weight:600;
+
+}
+
+h3{
+
+    font-size:1.1rem;
+
+    font-weight:600;
+
+}
+
+p{
+
+    color:var(--muted);
+
+    line-height:1.7;
+
+}
+
+
+/* ===========================================================
+   LINKS
+=========================================================== */
+
+a{
+
+    color:var(--primary);
+
+    text-decoration:none;
+
+}
+
+
+/* ===========================================================
+   DIVIDER
+=========================================================== */
+
+hr{
+
+    border:none;
+
+    border-top:1px solid var(--border);
+
+    margin:28px 0;
+
+}
+
+
+/* ===========================================================
+   PANELS
+=========================================================== */
+
+.aegis-card{
+
+    background:var(--panel);
+
+    border:1px solid var(--border);
+
+    border-radius:var(--radius);
+
+    padding:22px;
+
+    box-shadow:var(--shadow);
+
+}
+
+
+/* ===========================================================
+   METRIC
+=========================================================== */
+
+.aegis-metric{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:6px;
+
+}
+
+.aegis-metric-label{
+
+    color:var(--muted);
+
+    font-size:.82rem;
+
+    text-transform:uppercase;
+
+    letter-spacing:.08em;
+
+}
+
+.aegis-metric-value{
+
+    font-size:2rem;
+
+    font-weight:700;
+
+}
+
+
+/* ===========================================================
+   BUTTONS
+=========================================================== */
+
+.stButton>button{
+
+    width:100%;
+
+    border:none;
+
+    border-radius:14px;
+
+    padding:14px;
+
+    background:var(--primary);
+
+    color:white;
+
+    font-weight:600;
+
+    transition:var(--transition);
+
+}
+
+.stButton>button:hover{
+
+    transform:translateY(-2px);
+
+    opacity:.95;
+
+}
+
+
+/* ===========================================================
+   INPUTS
+=========================================================== */
+
+.stTextInput input{
+
+    background:var(--panel);
+
+    color:white;
+
+    border:1px solid var(--border);
+
+    border-radius:12px;
+
+}
+
+
+/* ===========================================================
+   BADGES
+=========================================================== */
+
+.aegis-ui-status-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    padding:6px 12px;
+
+    border-radius:999px;
+
+    font-size:.72rem;
+
+    font-weight:700;
+
+    letter-spacing:.08em;
+
+}
+
+.aegis-ui-status-badge--info{
+
+    background:#25314A;
+
+    color:#8FC2FF;
+
+}
+
+.aegis-ui-status-badge--success{
+
+    background:#183828;
+
+    color:#4AE09D;
+
+}
+
+.aegis-ui-status-badge--warning{
+
+    background:#4A3A1B;
+
+    color:#FFD166;
+
+}
+
+.aegis-ui-status-badge--error{
+
+    background:#4A1F24;
+
+    color:#FF7A7A;
+
+}
+
+
+/* ===========================================================
+   SECTION TITLES
+=========================================================== */
+
+.aegis-section-title{
+
+    font-size:1rem;
+
+    font-weight:700;
+
+    letter-spacing:.08em;
+
+    margin-bottom:6px;
+
+}
+
+.aegis-section-subtitle{
+
+    color:var(--muted);
+
+    margin-bottom:18px;
+
+}
+
+
+/* ===========================================================
+   STREAMLIT SPACING
+=========================================================== */
+
+.block-container{
+
+    padding-top:2rem;
+
+    padding-bottom:2rem;
+
+    max-width:1400px;
+
+}
+
+/* ===========================================================
+   MISSION STATUS
+=========================================================== */
+
+.mission-status{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:24px;
+
+    margin-bottom:24px;
+
+    padding:20px 24px;
+
+    background:var(--panel);
+
+    border:1px solid var(--border);
+
+    border-radius:var(--radius);
+
+    box-shadow:var(--shadow);
+
+}
+
+.mission-status>div{
+
+    flex:1;
+
+}
+
+.mission-status b{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-size:.72rem;
+
+    letter-spacing:.12em;
+
+    color:var(--muted);
+
+}
+
+
+
+/* ===========================================================
+   MISSION LAUNCH
+=========================================================== */
+
+.mission-launch-row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:16px 6px;
+
+    border-bottom:1px solid var(--border);
+
+    transition:var(--transition);
+
+}
+
+.mission-launch-row:hover{
+
+    padding-left:12px;
+
+    background:rgba(255,255,255,.02);
+
+}
+
+.mission-launch-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+}
+
+.mission-launch-icon{
+
+    width:34px;
+
+    height:34px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    background:var(--panel-2);
+
+    font-size:1rem;
+
+}
+
+.mission-launch-state{
+
+    font-size:.78rem;
+
+    font-weight:700;
+
+    letter-spacing:.12em;
+
+}
+
+
+
+/* ===========================================================
+   MISSION CONSOLE
+=========================================================== */
+
+.mission-console{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.mission-console__event{
+
+    display:flex;
+
+    gap:18px;
+
+    padding:20px;
+
+    background:var(--panel);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    transition:var(--transition);
+
+    box-shadow:var(--shadow);
+
+}
+
+.mission-console__event:hover{
+
+    transform:translateY(-3px);
+
+    border-color:rgba(79,140,255,.45);
+
+}
+
+.mission-console__event--newest{
+
+    border-left:4px solid var(--primary);
+
+}
+
+.mission-console__marker{
+
+    width:38px;
+
+    height:38px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-weight:700;
+
+    flex-shrink:0;
+
+    background:var(--panel-2);
+
+}
+
+.mission-console__event-content{
+
+    flex:1;
+
+}
+
+.mission-console__timestamp{
+
+    display:block;
+
+    margin-bottom:6px;
+
+    color:var(--muted);
+
+    font-size:.72rem;
+
+}
+
+.mission-console__department{
+
+    font-size:.75rem;
+
+    text-transform:uppercase;
+
+    letter-spacing:.14em;
+
+    color:var(--muted);
+
+    margin-bottom:6px;
+
+}
+
+.mission-console__title{
+
+    font-size:1.05rem;
+
+    font-weight:700;
+
+    color:var(--text);
+
+    margin-bottom:8px;
+
+}
+
+.mission-console__message{
+
+    color:var(--muted);
+
+    line-height:1.6;
+
+}
+
+
+
+/* ===========================================================
+   ICON COLORS
+=========================================================== */
+
+.aegis-ui-status-badge--info{
+
+    background:#233452;
+
+    color:#6FB8FF;
+
+}
+
+.aegis-ui-status-badge--success{
+
+    background:#183828;
+
+    color:#41D18A;
+
+}
+
+.aegis-ui-status-badge--warning{
+
+    background:#493B16;
+
+    color:#FFC857;
+
+}
+
+.aegis-ui-status-badge--error{
+
+    background:#4A2228;
+
+    color:#FF7878;
+
+}
+
+/* ===========================================================
+   MISSION STATUS
+=========================================================== */
+
+.mission-status{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:20px;
+
+    padding:20px 24px;
+
+    margin:22px 0;
+
+    background:var(--panel);
+
+    border:1px solid var(--border);
+
+    border-radius:var(--radius);
+
+    box-shadow:var(--shadow);
+
+}
+
+.mission-status>div{
+
+    flex:1;
+
+}
+
+.mission-status b{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    color:var(--muted);
+
+    font-size:.72rem;
+
+    letter-spacing:.12em;
+
+}
+
+
+/* ===========================================================
+   MISSION LAUNCH
+=========================================================== */
+
+.mission-launch-row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px 8px;
+
+    border-bottom:1px solid rgba(255,255,255,.06);
+
+    transition:var(--transition);
+
+}
+
+.mission-launch-row:hover{
+
+    background:rgba(255,255,255,.02);
+
+}
+
+.mission-launch-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+    font-weight:600;
+
+}
+
+.mission-launch-icon{
+
+    width:34px;
+
+    height:34px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,.04);
+
+}
+
+.mission-launch-state{
+
+    font-size:.78rem;
+
+    font-weight:700;
+
+    letter-spacing:.10em;
+
+}
+
+
+/* ===========================================================
+   MISSION CONSOLE
+=========================================================== */
+
+.mission-console{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.mission-console__event{
+
+    display:flex;
+
+    gap:18px;
+
+    padding:20px;
+
+    border-radius:18px;
+
+    background:var(--panel);
+
+    border:1px solid var(--border);
+
+    transition:var(--transition);
+
+}
+
+.mission-console__event:hover{
+
+    transform:translateY(-2px);
+
+    border-color:rgba(79,140,255,.4);
+
+}
+
+.mission-console__event--newest{
+
+    border-left:4px solid var(--primary);
+
+}
+
+.mission-console__marker{
+
+    width:42px;
+
+    height:42px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-weight:700;
+
+    flex-shrink:0;
+
+}
+
+.mission-console__event-content{
+
+    flex:1;
+
+}
+
+.mission-console__timestamp{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-size:.72rem;
+
+    color:var(--muted);
+
+}
+
+.mission-console__department{
+
+    text-transform:uppercase;
+
+    letter-spacing:.12em;
+
+    color:var(--muted);
+
+    font-size:.75rem;
+
+    margin-bottom:6px;
+
+}
+
+.mission-console__title{
+
+    color:white;
+
+    font-size:1.05rem;
+
+    font-weight:700;
+
+    margin-bottom:8px;
+
+}
+
+.mission-console__message{
+
+    color:#CBD5E1;
+
+    line-height:1.6;
+
+}
+
+
+/* ===========================================================
+   LIVE STATUS
+=========================================================== */
+
+.live-status-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+
+    gap:18px;
+
+}
+
+.live-status-card{
+
+    background:var(--panel);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:20px;
+
+}
+
+.live-status-value{
+
+    margin-top:10px;
+
+    font-size:2rem;
+
+    font-weight:700;
+
+}
+
+/* ===========================================================
+   INVESTMENT COMMITTEE
+=========================================================== */
+
+.committee-card{
+
+    background:linear-gradient(
+        180deg,
+        rgba(255,255,255,.05),
+        rgba(255,255,255,.02)
+    );
+
+    border:1px solid var(--border);
+
+    border-radius:20px;
+
+    padding:28px;
+
+    text-align:center;
+
+    box-shadow:var(--shadow);
+
+}
+
+.committee-title{
+
+    color:var(--muted);
+
+    font-size:.75rem;
+
+    text-transform:uppercase;
+
+    letter-spacing:.18em;
+
+}
+
+.committee-rec{
+
+    margin-top:20px;
+
+    font-size:2rem;
+
+    font-weight:800;
+
+}
+
+.committee-score{
+
+    margin-top:18px;
+
+    font-size:4rem;
+
+    font-weight:800;
+
+    color:var(--primary);
+
+    line-height:1;
+
+}
+
+.committee-label{
+
+    margin-top:10px;
+
+    color:var(--muted);
+
+}
+
+.committee-confidence{
+
+    margin-top:20px;
+
+    padding-top:18px;
+
+    border-top:1px solid var(--border);
+
+    color:#D7DCE6;
+
+}
+
+
+/* ===========================================================
+   INTELLIGENCE REPORT
+=========================================================== */
+
+.intelligence-card{
+
+    background:var(--panel);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:22px;
+
+}
+
+.intelligence-section{
+
+    margin-top:18px;
+
+}
+
+.intelligence-section h4{
+
+    margin-bottom:8px;
+
+}
+
+.intelligence-item{
+
+    padding:10px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+}
+
+
+/* ===========================================================
+   SCROLLBAR
+=========================================================== */
+
+::-webkit-scrollbar{
+
+    width:10px;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#2E3B50;
+
+    border-radius:20px;
+
+}
+
+::-webkit-scrollbar-track{
+
+    background:transparent;
+
+}
+
+
+/* ===========================================================
+   HOVER EFFECTS
+=========================================================== */
+
+.aegis-card:hover,
+.committee-card:hover,
+.live-status-card:hover{
+
+    transform:translateY(-2px);
+
+    transition:var(--transition);
+
+}
+
+
+/* ===========================================================
+   FADE
+=========================================================== */
+
+@keyframes fadeIn{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(8px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:none;
+
+    }
+
+}
+
+.mission-console__event{
+
+    animation:fadeIn .35s ease;
+
+}
