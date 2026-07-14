@@ -60,6 +60,8 @@ def render(mission):
 
 </div>
 """
+            ,
+            unsafe_allow_html=True,
         )
 
     st.markdown("---")
