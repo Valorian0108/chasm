@@ -1,3 +1,5 @@
+from html import escape
+
 import streamlit as st
 
 
@@ -9,9 +11,16 @@ def render(report):
         st.info("No investment decision available.")
         return
 
-    score = decision.get("score", "--")
     recommendation = decision.get("recommendation", "UNKNOWN")
+    score = decision.get("score", "--")
     confidence = decision.get("confidence", "--")
+    risk_level = decision.get("risk_level", "UNKNOWN")
+    investment_thesis = decision.get("investment_thesis", "")
+    strengths = _as_list(decision.get("strengths", []))
+    weaknesses = _as_list(decision.get("weaknesses", []))
+    red_flags = _as_list(decision.get("red_flags", []))
+    next_steps = _as_list(decision.get("next_steps", []))
+    summary = decision.get("summary", "")
 
     html = f"""
 <div class="committee-card">
@@ -21,19 +30,11 @@ def render(report):
     </div>
 
     <div class="committee-rec">
-        {recommendation}
-    </div>
-
-    <div class="committee-score">
-        {score}
+        {escape(str(recommendation))}
     </div>
 
     <div class="committee-label">
-        Overall Mission Score
-    </div>
-
-    <div class="committee-confidence">
-        Confidence • {confidence}
+        Recommendation
     </div>
 
 </div>
@@ -41,27 +42,57 @@ def render(report):
 
     st.html(html)
 
-    strengths = decision.get("strengths", [])
-    weaknesses = decision.get("weaknesses", [])
+    score_col, confidence_col, risk_col = st.columns(3)
+    score_col.metric("Score", score)
+    confidence_col.metric("Confidence", confidence)
+    risk_col.metric("Risk Level", risk_level)
 
+    st.markdown("#### Investment Thesis")
+    if investment_thesis:
+        st.info(investment_thesis)
+    else:
+        st.info("No investment thesis available.")
+
+    st.markdown("#### Strengths")
     if strengths:
-
-        st.markdown("#### Strengths")
-
         for item in strengths:
-            st.success(f"✓ {item}")
+            st.success(item)
+    else:
+        st.info("No strengths supplied.")
 
+    st.markdown("#### Weaknesses")
     if weaknesses:
-
-        st.markdown("#### Risks")
-
         for item in weaknesses:
-            st.warning(f"⚠ {item}")
+            st.warning(item)
+    else:
+        st.info("No weaknesses supplied.")
 
-    summary = decision.get("summary", "")
+    st.markdown("#### Red Flags")
+    if red_flags:
+        for item in red_flags:
+            st.error(item)
+    else:
+        st.info("No red flags supplied.")
 
+    st.markdown("#### Next Steps")
+    if next_steps:
+        for item in next_steps:
+            st.markdown(f"- {item}")
+    else:
+        st.info("No next steps supplied.")
+
+    st.markdown("#### Committee Conclusion")
     if summary:
-
-        st.markdown("#### Committee Assessment")
-
         st.info(summary)
+    else:
+        st.info("No committee conclusion available.")
+
+
+def _as_list(value):
+    if isinstance(value, list):
+        return value
+
+    if value:
+        return [value]
+
+    return []

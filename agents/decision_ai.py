@@ -45,6 +45,7 @@ Scoring rubric:
 Department reports:
 
 RISK / CONTRACT SAFETY
+
 Summary:
 {risk.get("summary", "Unknown")}
 
@@ -53,6 +54,9 @@ Confidence:
 
 Reasoning:
 {risk.get("reasoning", [])}
+
+Raw Data:
+{risk.get("data", {})}
 
 ========================
 
@@ -66,6 +70,9 @@ Confidence:
 Reasoning:
 {wallet.get("reasoning", [])}
 
+Raw Data:
+{wallet.get("data", {})}
+
 ========================
 
 COMMUNITY QUALITY
@@ -78,6 +85,9 @@ Confidence:
 Reasoning:
 {social.get("reasoning", [])}
 
+Raw Data:
+{social.get("data", {})}
+
 ========================
 
 DOCUMENTATION MATURITY
@@ -89,6 +99,9 @@ Confidence:
 
 Reasoning:
 {docs.get("reasoning", [])}
+
+Raw Data:
+{docs.get("data", {})}
 
 ========================
 
@@ -140,7 +153,8 @@ If evidence is missing or conflicting, say so plainly in the thesis, red flags, 
         print(f"Warning: Decision AI unavailable: {e}")
         return {
             "score": 0,
-            "recommendation": "AVOID",
+            "recommendation": "HOLD",
+            "score": None,
             "confidence": 0.0,
             "risk_level": "UNKNOWN",
             "investment_thesis": (
