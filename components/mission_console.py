@@ -25,10 +25,7 @@ def render(events: Sequence[MissionEvent]) -> None:
     if ordered_events:
         status_badge(ordered_events[-1].status)
 
-    st.markdown(
-        _timeline_markup(ordered_events),
-        unsafe_allow_html=True,
-    )
+    st.html(_timeline_markup(ordered_events))
 
     divider()
 

@@ -42,7 +42,7 @@ def render(mission):
             state = "QUEUED"
             color = "#7D8A9B"
 
-        st.markdown(
+        st.html(
             f"""
 <div class="mission-launch-row">
 
@@ -59,8 +59,7 @@ def render(mission):
     </div>
 
 </div>
-""",
-            unsafe_allow_html=True,
+"""
         )
 
     st.markdown("---")
