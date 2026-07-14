@@ -58,8 +58,9 @@ if mission["state"] == "HOME":
     if analyze and token.strip():
 
         mission["token"] = token.upper()
+    
 
-        mission["state"] = "MISSION_CREATED"
+        mission["state"] = "MISSION_LAUNCH"
 
         mission["progress"] = 0
 
