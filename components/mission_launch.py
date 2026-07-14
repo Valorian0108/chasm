@@ -42,7 +42,7 @@ def render(mission):
             state = "QUEUED"
             color = "#7D8A9B"
 
-        st.html(
+        st.markdown(
             f"""
 <div class="mission-launch-row">
 

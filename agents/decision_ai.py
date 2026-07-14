@@ -18,27 +18,33 @@ def analyze(report):
     docs = report.get("docs", {})
 
     prompt = f"""
-You are the Chief Investment Officer (CIO) of a crypto investment fund.
+You are the Investment Committee of AEGIS, an institutional crypto research committee.
 
-Your specialist AI analysts have already analyzed this token.
+Your job is to synthesize the specialist reports below into a disciplined investment view.
+Do not rewrite the reports. Do not invent facts. Do not infer facts that are not supported.
+If evidence is missing, weak, mixed, or conflicting, explicitly say so.
+Every conclusion must be based only on the supplied department reports.
 
-========================
+Reasoning framework:
+1. Evaluate contract risk.
+2. Evaluate on-chain health.
+3. Evaluate community quality.
+4. Evaluate documentation maturity.
+5. Identify conflicting evidence.
+6. Produce an investment thesis.
+7. Recommend BUY, HOLD, or AVOID.
 
-WALLET AGENT
+Scoring rubric:
+90-100 = Exceptional
+80-89 = Strong
+70-79 = Promising but speculative
+60-69 = Mixed
+40-59 = High risk
+0-39 = Avoid
 
-Summary:
-{wallet.get("summary", "Unknown")}
+Department reports:
 
-Confidence:
-{wallet.get("confidence", 0)}
-
-Reasoning:
-{wallet.get("reasoning", [])}
-
-========================
-
-RISK AGENT
-
+RISK / CONTRACT SAFETY
 Summary:
 {risk.get("summary", "Unknown")}
 
@@ -50,8 +56,19 @@ Reasoning:
 
 ========================
 
-SOCIAL AGENT
+ON-CHAIN / WALLET HEALTH
+Summary:
+{wallet.get("summary", "Unknown")}
 
+Confidence:
+{wallet.get("confidence", 0)}
+
+Reasoning:
+{wallet.get("reasoning", [])}
+
+========================
+
+COMMUNITY QUALITY
 Summary:
 {social.get("summary", "Unknown")}
 
@@ -63,8 +80,7 @@ Reasoning:
 
 ========================
 
-DOCS AGENT
-
+DOCUMENTATION MATURITY
 Summary:
 {docs.get("summary", "Unknown")}
 
@@ -76,25 +92,32 @@ Reasoning:
 
 ========================
 
-Based ONLY on these reports, produce an investment recommendation.
-
-Return ONLY valid JSON.
-
-Example:
+Return ONLY valid JSON matching this exact schema:
 
 {{
     "score": 88,
     "recommendation": "BUY",
     "confidence": 0.86,
+    "risk_level": "LOW",
+    "investment_thesis": "Concise institutional thesis grounded only in the supplied reports.",
     "strengths": [
-        "High liquidity",
-        "Strong community"
+        "High liquidity"
     ],
     "weaknesses": [
-        "Speculative meme token"
+        "Documentation is incomplete"
     ],
-    "summary": "Overall this token demonstrates strong fundamentals relative to similar meme projects."
+    "red_flags": [
+        "Conflicting evidence across reports"
+    ],
+    "next_steps": [
+        "Verify contract ownership"
+    ],
+    "summary": "Overall committee conclusion."
 }}
+
+Use these exact recommendation values only: BUY, HOLD, AVOID.
+Use these exact risk_level values only: LOW, MEDIUM, HIGH, UNKNOWN.
+If evidence is missing or conflicting, say so plainly in the thesis, red flags, or summary.
 """
 
     try:
@@ -114,12 +137,22 @@ Example:
         return json.loads(text)
 
     except Exception as e:
-        print(f"⚠️ Decision AI unavailable: {e}")
+        print(f"Warning: Decision AI unavailable: {e}")
         return {
-            "score": None,
-            "recommendation": "UNAVAILABLE",
-            "confidence": 0,
+            "score": 0,
+            "recommendation": "AVOID",
+            "confidence": 0.0,
+            "risk_level": "UNKNOWN",
+            "investment_thesis": (
+                "The Investment Committee could not produce an evidence-based thesis "
+                "because the AI service is temporarily unavailable."
+            ),
             "strengths": [],
             "weaknesses": [],
-            "summary": "The Investment Committee could not generate a recommendation because the AI service is temporarily unavailable."
+            "red_flags": [],
+            "next_steps": [],
+            "summary": (
+                "The Investment Committee could not generate a recommendation because "
+                "the AI service is temporarily unavailable."
+            ),
         }
