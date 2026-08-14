@@ -3,9 +3,11 @@ import {
   analysisReportSchema,
   analysisRequestSchema,
   buildAnalysisProvenance,
+  publishReceiptSchema,
   buildPublishStatus,
   buildXLayerPublication,
   type AnalysisReport,
+  type PublishReceipt,
   type PublishStatus,
   type XLayerPublication,
 } from "@workspace/api-zod";
@@ -149,6 +151,48 @@ export async function preparePublishStatus(
         published.status === "published"
           ? "Track the confirmed transaction on the explorer."
           : "Send the payload through the testnet wallet flow to broadcast the transaction.",
+    };
+  }
+}
+
+export async function finalizePublishStatus(
+  report: AnalysisReport,
+  receipt: PublishReceipt,
+): Promise<PublishStatus & { nextAction: string }> {
+  const parsedReceipt = publishReceiptSchema.parse(receipt);
+
+  try {
+    const response = await fetch(`${API_BASE}/analysis/publish`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        report,
+        receipt: parsedReceipt,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Publish API returned ${response.status}`);
+    }
+
+    return response.json() as Promise<PublishStatus & { nextAction: string }>;
+  } catch (error) {
+    console.warn("Falling back to local published status", error);
+    const status = buildPublishStatus(report, {
+      txHash: parsedReceipt.txHash,
+      explorerUrl: parsedReceipt.explorerUrl,
+      publishedAt: parsedReceipt.publishedAt,
+    });
+
+    return {
+      ...status,
+      status: "published",
+      txHash: parsedReceipt.txHash,
+      explorerUrl: parsedReceipt.explorerUrl,
+      publishedAt: parsedReceipt.publishedAt,
+      nextAction: "Track the confirmed transaction on the explorer.",
     };
   }
 }

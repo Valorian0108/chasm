@@ -68,6 +68,12 @@ export const publishStatusSchema = z.object({
   publishedAt: z.string().optional(),
 });
 
+export const publishReceiptSchema = z.object({
+  txHash: z.string().min(1),
+  explorerUrl: z.string().url().optional(),
+  publishedAt: z.string().datetime().optional(),
+});
+
 export const analysisRequestSchema = z.object({
   officialTerms: z.string().trim().min(1),
   publicMarketing: z.string().trim().min(1),
@@ -86,6 +92,7 @@ export type PublicationChecklistItem = z.infer<
   typeof publicationChecklistItemSchema
 >;
 export type PublishStatus = z.infer<typeof publishStatusSchema>;
+export type PublishReceipt = z.infer<typeof publishReceiptSchema>;
 
 const demoFindings: Finding[] = [
   {

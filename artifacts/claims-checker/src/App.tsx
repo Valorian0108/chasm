@@ -7,7 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
-import { getDefaultSourceMetadata, listRecords, preparePublication, preparePublishStatus, saveReport, screenClaims, type AnalysisRecord } from '@/lib/analysis-api';
+import { finalizePublishStatus, getDefaultSourceMetadata, listRecords, preparePublication, preparePublishStatus, saveReport, screenClaims, type AnalysisRecord } from '@/lib/analysis-api';
 
 const queryClient = new QueryClient();
 
@@ -241,6 +241,8 @@ function ReportView({
   const [showMethod, setShowMethod] = useState(false);
   const [publication, setPublication] = useState<ReturnType<typeof buildXLayerPublication> | null>(null);
   const [publishStatus, setPublishStatus] = useState<Awaited<ReturnType<typeof preparePublishStatus>> | null>(null);
+  const [publishTxHash, setPublishTxHash] = useState('');
+  const [publishExplorerUrl, setPublishExplorerUrl] = useState('');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const checkedAt = useMemo(() => new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(report.checkedAt)), [report.checkedAt]);
   const highCount = report.findings.filter((finding) => finding.severity === 'high').length;
@@ -284,6 +286,38 @@ function ReportView({
           <button type="button" onClick={() => setShowMethod((visible) => !visible)} data-testid="button-toggle-method" className="mt-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">{showMethod ? 'Hide method' : 'How this works'}<ChevronDown size={14} className={showMethod ? 'rotate-180 transition-transform' : 'transition-transform'} /></button>
           <button type="button" onClick={async () => setPublication(await preparePublication(report))} data-testid="button-prepare-publication" className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">Prepare X Layer payload</button>
           <button type="button" onClick={async () => setPublishStatus(await preparePublishStatus(report))} data-testid="button-prepare-publish-status" className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">Prepare publish status</button>
+          <div className="mt-3 space-y-3 rounded-none border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.04)] p-3">
+            <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--primary-foreground)/.56)]">Attach testnet receipt</div>
+            <input
+              value={publishTxHash}
+              onChange={(event) => setPublishTxHash(event.target.value)}
+              data-testid="input-publish-tx-hash"
+              aria-label="Publish transaction hash"
+              placeholder="0x..."
+              className="w-full border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.05)] px-3 py-2 text-xs text-[hsl(var(--primary-foreground))] outline-none placeholder:text-[hsl(var(--primary-foreground)/.34)]"
+            />
+            <input
+              value={publishExplorerUrl}
+              onChange={(event) => setPublishExplorerUrl(event.target.value)}
+              data-testid="input-publish-explorer-url"
+              aria-label="Publish explorer URL"
+              placeholder="https://..."
+              className="w-full border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.05)] px-3 py-2 text-xs text-[hsl(var(--primary-foreground))] outline-none placeholder:text-[hsl(var(--primary-foreground)/.34)]"
+            />
+            <button
+              type="button"
+              disabled={!publishTxHash.trim()}
+              onClick={async () => setPublishStatus(await finalizePublishStatus(report, {
+                txHash: publishTxHash.trim(),
+                explorerUrl: publishExplorerUrl.trim() || undefined,
+                publishedAt: new Date().toISOString(),
+              }))}
+              data-testid="button-attach-publish-receipt"
+              className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))] disabled:opacity-40"
+            >
+              Mark published on testnet
+            </button>
+          </div>
           <button type="button" onClick={async () => {
             setSaveStatus('saving');
             try {
