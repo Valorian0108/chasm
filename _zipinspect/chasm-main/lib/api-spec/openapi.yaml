@@ -1,0 +1,265 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: analysis
+    description: Screening operations
+  - name: publication
+    description: X Layer publication operations
+  - name: records
+    description: Persistence operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /analysis/screen:
+    post:
+      operationId: screenClaims
+      tags: [analysis]
+      summary: Screen claims against terms
+      description: Runs the local screening rules against official terms and marketing copy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalysisRequest"
+      responses:
+        "200":
+          description: Screening report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisReport"
+        "400":
+          description: Invalid request
+  /analysis/publish-prep:
+    post:
+      operationId: prepareXLayerPublication
+      tags: [publication]
+      summary: Prepare an X Layer publication payload
+      description: Validates a screening report and returns the compact payload that would be committed on-chain.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalysisReport"
+      responses:
+        "200":
+          description: Publication payload ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationPrepResponse"
+        "400":
+          description: Invalid request
+  /analysis/records:
+    post:
+      operationId: saveAnalysisRecord
+      tags: [records]
+      summary: Save a screened report
+      description: Saves a report to persistence, using PostgreSQL when configured and an in-memory fallback otherwise.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalysisReport"
+      responses:
+        "201":
+          description: Saved
+        "400":
+          description: Invalid request
+    get:
+      operationId: listAnalysisRecords
+      tags: [records]
+      summary: List saved reports
+      description: Returns the most recent saved reports.
+      responses:
+        "200":
+          description: Saved reports
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    AnalysisRequest:
+      type: object
+      properties:
+        officialTerms:
+          type: string
+        publicMarketing:
+          type: string
+        sourceLabel:
+          type: string
+        sourceUrl:
+          type: string
+          format: uri
+        targetNetwork:
+          type: string
+          enum: [local, xlayer-testnet, xlayer-mainnet]
+      required:
+        - officialTerms
+        - publicMarketing
+    AnalysisReport:
+      type: object
+      properties:
+        checkedAt:
+          type: string
+        status:
+          type: string
+          enum: [flagged, clear]
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        summary:
+          type: string
+        provenance:
+          type: object
+          properties:
+            provider:
+              type: string
+              enum: [local, ai, fallback]
+            network:
+              type: string
+              enum: [local, xlayer-testnet, xlayer-mainnet]
+            sourceLabel:
+              type: string
+            sourceUrl:
+              type: string
+              format: uri
+            hashes:
+              type: object
+              properties:
+                officialTerms:
+                  type: string
+                publicMarketing:
+                  type: string
+                report:
+                  type: string
+              required:
+                - officialTerms
+                - publicMarketing
+                - report
+            chainRecord:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [not_started, ready, published]
+                txHash:
+                  type: string
+                explorerUrl:
+                  type: string
+                  format: uri
+                publishedAt:
+                  type: string
+              required:
+                - status
+          required:
+            - provider
+            - network
+            - hashes
+            - chainRecord
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              severity:
+                type: string
+                enum: [high, medium, low]
+              marketingQuote:
+                type: string
+              termsQuote:
+                type: string
+              explanation:
+                type: string
+              confidence:
+                type: integer
+                minimum: 0
+                maximum: 100
+            required:
+              - title
+              - severity
+              - marketingQuote
+              - termsQuote
+              - explanation
+              - confidence
+      required:
+        - checkedAt
+        - status
+        - score
+        - summary
+        - findings
+    PublicationPrepResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready]
+        payload:
+          type: object
+          properties:
+            network:
+              type: string
+              enum: [xlayer-testnet, xlayer-mainnet]
+            sourceLabel:
+              type: string
+            sourceUrl:
+              type: string
+              format: uri
+            reportHash:
+              type: string
+            officialTermsHash:
+              type: string
+            publicMarketingHash:
+              type: string
+            findingsCount:
+              type: integer
+              minimum: 0
+            highSeverityCount:
+              type: integer
+              minimum: 0
+            summary:
+              type: string
+            timestamp:
+              type: string
+          required:
+            - network
+            - reportHash
+            - officialTermsHash
+            - publicMarketingHash
+            - findingsCount
+            - highSeverityCount
+            - summary
+            - timestamp
+      required:
+        - status
+        - payload
