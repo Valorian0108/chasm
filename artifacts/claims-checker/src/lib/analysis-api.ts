@@ -3,8 +3,10 @@ import {
   analysisReportSchema,
   analysisRequestSchema,
   buildAnalysisProvenance,
+  buildPublishStatus,
   buildXLayerPublication,
   type AnalysisReport,
+  type PublishStatus,
   type XLayerPublication,
 } from "@workspace/api-zod";
 
@@ -33,15 +35,35 @@ export type AnalysisRecord = {
   createdAt: string;
 };
 
+export function getDefaultSourceMetadata() {
+  if (typeof window === "undefined") {
+    return {
+      sourceLabel: "Browser screening session",
+      sourceUrl: "",
+    };
+  }
+
+  return {
+    sourceLabel: `${window.location.hostname || "Browser"} screening session`,
+    sourceUrl: window.location.origin,
+  };
+}
+
 export async function screenClaims(
   officialTerms: string,
   publicMarketing: string,
+  options?: {
+    sourceLabel?: string;
+    sourceUrl?: string;
+    targetNetwork?: "local" | "xlayer-testnet" | "xlayer-mainnet";
+  },
 ): Promise<AnalysisReport> {
   const request = analysisRequestSchema.parse({
     officialTerms,
     publicMarketing,
-    sourceLabel: "Browser screening session",
-    targetNetwork: "local",
+    sourceLabel: options?.sourceLabel ?? getDefaultSourceMetadata().sourceLabel,
+    sourceUrl: options?.sourceUrl ?? getDefaultSourceMetadata().sourceUrl,
+    targetNetwork: options?.targetNetwork ?? "local",
   });
 
   try {
@@ -93,6 +115,41 @@ export async function preparePublication(
   } catch (error) {
     console.warn("Falling back to local publication prep", error);
     return buildXLayerPublication(report);
+  }
+}
+
+export async function preparePublishStatus(
+  report: AnalysisReport,
+): Promise<PublishStatus & { nextAction: string }> {
+  try {
+    const response = await fetch(`${API_BASE}/analysis/publish`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(report),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Publish API returned ${response.status}`);
+    }
+
+    return response.json() as Promise<PublishStatus & { nextAction: string }>;
+  } catch (error) {
+    console.warn("Falling back to local publish status", error);
+    const published = buildPublishStatus(report, {
+      txHash: report.provenance?.chainRecord.txHash,
+      explorerUrl: report.provenance?.chainRecord.explorerUrl,
+      publishedAt: report.provenance?.chainRecord.publishedAt,
+    });
+
+    return {
+      ...published,
+      nextAction:
+        published.status === "published"
+          ? "Track the confirmed transaction on the explorer."
+          : "Send the payload through the testnet wallet flow to broadcast the transaction.",
+    };
   }
 }
 

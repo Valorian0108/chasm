@@ -102,6 +102,10 @@ The report includes:
 
 Saved reports now surface in a visible ledger so you can review recent checks, provider mode, compact hashes, and publication status from the app itself.
 
+### Publish status
+
+The app also exposes a publish-status shell that marks each report as `pending`, `ready`, or `published`, along with a checklist for source metadata, payload readiness, and chain tracking.
+
 ### Netlify deployment
 
 This repo is prepared for a Netlify-hosted frontend build:

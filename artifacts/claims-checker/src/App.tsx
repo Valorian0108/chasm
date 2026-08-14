@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AlertTriangle, ArrowRight, Check, CheckCircle2, ChevronDown, ClipboardCheck, FileText, Fingerprint, Info, Loader2, LockKeyhole, RotateCcw, Scale, ShieldCheck, Sparkles, TriangleAlert, X } from 'lucide-react';
-import { buildXLayerPublication, type Finding, type AnalysisReport as Report, type Severity } from '@workspace/api-zod';
+import { buildPublicationChecklist, buildXLayerPublication, type Finding, type AnalysisReport as Report, type Severity } from '@workspace/api-zod';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
-import { listRecords, preparePublication, saveReport, screenClaims, type AnalysisRecord } from '@/lib/analysis-api';
+import { getDefaultSourceMetadata, listRecords, preparePublication, preparePublishStatus, saveReport, screenClaims, type AnalysisRecord } from '@/lib/analysis-api';
 
 const queryClient = new QueryClient();
 
@@ -92,8 +92,11 @@ function FieldLabel({ index, children, count }: { index: string; children: strin
 }
 
 function Workspace({ onReport }: { onReport: (report: Report) => void }) {
+  const defaultSourceMetadata = useMemo(() => getDefaultSourceMetadata(), []);
   const [legalTerms, setLegalTerms] = useState('');
   const [marketingCopy, setMarketingCopy] = useState('');
+  const [sourceLabel, setSourceLabel] = useState(defaultSourceMetadata.sourceLabel);
+  const [sourceUrl, setSourceUrl] = useState(defaultSourceMetadata.sourceUrl);
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState('');
 
@@ -102,6 +105,8 @@ function Workspace({ onReport }: { onReport: (report: Report) => void }) {
   const loadDemo = () => {
     setLegalTerms(demoLegalTerms);
     setMarketingCopy(demoMarketingCopy);
+    setSourceLabel('Demo research package');
+    setSourceUrl(defaultSourceMetadata.sourceUrl);
     setError('');
   };
 
@@ -114,7 +119,11 @@ function Workspace({ onReport }: { onReport: (report: Report) => void }) {
     setIsChecking(true);
     window.setTimeout(async () => {
       try {
-        onReport(await screenClaims(legalTerms, marketingCopy));
+        onReport(await screenClaims(legalTerms, marketingCopy, {
+          sourceLabel,
+          sourceUrl: sourceUrl.trim() || undefined,
+          targetNetwork: 'local',
+        }));
       } finally {
         setIsChecking(false);
       }
@@ -162,6 +171,30 @@ function Workspace({ onReport }: { onReport: (report: Report) => void }) {
             </div>
             <h2 className="font-serif text-3xl leading-none">A quiet<br />second look.</h2>
             <p className="mt-4 text-sm leading-6 text-[hsl(var(--primary-foreground)/.64)]">A local ruleset checks absolute promises, implied certainty, and terms that qualify risk.</p>
+            <div className="mt-6 space-y-3 border-t border-[hsl(var(--primary-foreground)/.14)] pt-5">
+              <div>
+                <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--primary-foreground)/.56)]">Source label</label>
+                <input
+                  value={sourceLabel}
+                  onChange={(event) => setSourceLabel(event.target.value)}
+                  data-testid="input-source-label"
+                  aria-label="Source label"
+                  placeholder="Browser screening session"
+                  className="w-full border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.04)] px-3 py-2 text-sm text-[hsl(var(--primary-foreground))] outline-none placeholder:text-[hsl(var(--primary-foreground)/.34)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--primary-foreground)/.56)]">Source URL</label>
+                <input
+                  value={sourceUrl}
+                  onChange={(event) => setSourceUrl(event.target.value)}
+                  data-testid="input-source-url"
+                  aria-label="Source URL"
+                  placeholder="https://..."
+                  className="w-full border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.04)] px-3 py-2 text-sm text-[hsl(var(--primary-foreground))] outline-none placeholder:text-[hsl(var(--primary-foreground)/.34)]"
+                />
+              </div>
+            </div>
           </div>
           <div className="mt-8">
             <button type="button" onClick={loadDemo} data-testid="button-load-demo" className="group mb-3 flex w-full items-center justify-between border border-[hsl(var(--primary-foreground)/.25)] px-3 py-3 text-left text-xs text-[hsl(var(--primary-foreground)/.82)] transition-colors hover:border-[hsl(var(--accent)/.8)] hover:text-[hsl(var(--accent))]">
@@ -207,9 +240,14 @@ function ReportView({
   const [openFinding, setOpenFinding] = useState<number | null>(0);
   const [showMethod, setShowMethod] = useState(false);
   const [publication, setPublication] = useState<ReturnType<typeof buildXLayerPublication> | null>(null);
+  const [publishStatus, setPublishStatus] = useState<Awaited<ReturnType<typeof preparePublishStatus>> | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const checkedAt = useMemo(() => new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(report.checkedAt)), [report.checkedAt]);
   const highCount = report.findings.filter((finding) => finding.severity === 'high').length;
+  const publicationChecklist = useMemo(
+    () => buildPublicationChecklist(report, publication),
+    [report, publication],
+  );
 
   return (
     <main className="mx-auto max-w-[1480px] px-5 pb-20 pt-10 sm:px-8 lg:px-12 lg:pt-14">
@@ -245,6 +283,7 @@ function ReportView({
           <p className="mt-5 text-sm leading-6 text-[hsl(var(--primary-foreground)/.76)]">{highCount ? 'Preserve the quoted language, then ask the project to reconcile each promise with its terms.' : 'Keep the source text with your research notes and review implied claims manually.'}</p>
           <button type="button" onClick={() => setShowMethod((visible) => !visible)} data-testid="button-toggle-method" className="mt-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">{showMethod ? 'Hide method' : 'How this works'}<ChevronDown size={14} className={showMethod ? 'rotate-180 transition-transform' : 'transition-transform'} /></button>
           <button type="button" onClick={async () => setPublication(await preparePublication(report))} data-testid="button-prepare-publication" className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">Prepare X Layer payload</button>
+          <button type="button" onClick={async () => setPublishStatus(await preparePublishStatus(report))} data-testid="button-prepare-publish-status" className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">Prepare publish status</button>
           <button type="button" onClick={async () => {
             setSaveStatus('saving');
             try {
@@ -281,34 +320,68 @@ function ReportView({
         </div>
       </section>}
 
-      {publication && <section className="mt-5 border border-[hsl(var(--border))] bg-[hsl(var(--card)/.72)] p-5 reveal reveal-delay-2">
+      <section className="mt-5 border border-[hsl(var(--border))] bg-[hsl(var(--card)/.72)] p-5 reveal reveal-delay-2">
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">X Layer payload</div>
-            <div className="mt-2 text-sm text-[hsl(var(--foreground))]">Ready for testnet signing</div>
+            <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
+              {publishStatus?.status === 'published'
+                ? 'Published on testnet'
+                : publishStatus?.status === 'ready'
+                  ? 'Ready for testnet signing'
+                  : 'Payload not prepared yet'}
+            </div>
           </div>
-          <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">{publication.network}</div>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="border border-[hsl(var(--border))] p-3">
-            <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Report hash</div>
-            <div className="mt-2 font-mono text-[11px] break-all text-[hsl(var(--foreground))]">{publication.reportHash}</div>
-          </div>
-          <div className="border border-[hsl(var(--border))] p-3">
-            <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Terms hash</div>
-            <div className="mt-2 font-mono text-[11px] break-all text-[hsl(var(--foreground))]">{publication.officialTermsHash}</div>
-          </div>
-          <div className="border border-[hsl(var(--border))] p-3">
-            <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Marketing hash</div>
-            <div className="mt-2 font-mono text-[11px] break-all text-[hsl(var(--foreground))]">{publication.publicMarketingHash}</div>
-          </div>
-          <div className="border border-[hsl(var(--border))] p-3">
-            <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Findings</div>
-            <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{publication.findingsCount} total / {publication.highSeverityCount} high</div>
-            <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">{publication.timestamp}</div>
+          <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">
+            {publishStatus?.network ?? publication?.network ?? 'pending'}
           </div>
         </div>
-      </section>}
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1.3fr_.9fr]">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="border border-[hsl(var(--border))] p-3">
+              <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Report hash</div>
+              <div className="mt-2 font-mono text-[11px] break-all text-[hsl(var(--foreground))]">{publishStatus?.payload.reportHash ?? publication?.reportHash ?? 'Pending payload'}</div>
+            </div>
+            <div className="border border-[hsl(var(--border))] p-3">
+              <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Terms hash</div>
+              <div className="mt-2 font-mono text-[11px] break-all text-[hsl(var(--foreground))]">{publishStatus?.payload.officialTermsHash ?? publication?.officialTermsHash ?? 'Pending payload'}</div>
+            </div>
+            <div className="border border-[hsl(var(--border))] p-3">
+              <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Marketing hash</div>
+              <div className="mt-2 font-mono text-[11px] break-all text-[hsl(var(--foreground))]">{publishStatus?.payload.publicMarketingHash ?? publication?.publicMarketingHash ?? 'Pending payload'}</div>
+            </div>
+            <div className="border border-[hsl(var(--border))] p-3">
+              <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Findings</div>
+              <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{publishStatus ? `${publishStatus.payload.findingsCount} total / ${publishStatus.payload.highSeverityCount} high` : publication ? `${publication.findingsCount} total / ${publication.highSeverityCount} high` : 'Awaiting payload'}</div>
+              <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">{publishStatus?.payload.timestamp ?? publication?.timestamp ?? 'Timestamp pending'}</div>
+            </div>
+          </div>
+          <div className="border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-4">
+            <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Publish checklist</div>
+            <div className="mt-3 space-y-3">
+              {(publishStatus?.checklist ?? publicationChecklist).map((item) => (
+                <div key={item.key} className="flex gap-3 border-b border-[hsl(var(--border))] pb-3 last:border-0 last:pb-0">
+                  <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.complete ? 'bg-[hsl(var(--secondary))]' : 'bg-[hsl(var(--muted-foreground))]'}`} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-[hsl(var(--foreground))]">{item.label}</div>
+                    <div className="mt-1 text-xs leading-5 text-[hsl(var(--muted-foreground))]">{item.detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {publishStatus && (
+          <div className="mt-4 border border-[hsl(var(--border))] bg-[hsl(var(--card)/.56)] p-4 text-sm text-[hsl(var(--foreground))]">
+            <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Publish state</div>
+            <div className="mt-2 font-medium">{publishStatus.nextAction}</div>
+            <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">
+              {publishStatus.status}
+              {publishStatus.txHash ? ` / ${publishStatus.txHash}` : ''}
+            </div>
+          </div>
+        )}
+      </section>
 
       <section className="reveal reveal-delay-2">
         <div className="mb-4 flex items-end justify-between">

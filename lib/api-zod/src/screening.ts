@@ -51,6 +51,23 @@ export const xLayerPublicationSchema = z.object({
   timestamp: z.string().min(1),
 });
 
+export const publicationChecklistItemSchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  detail: z.string().min(1),
+  complete: z.boolean(),
+});
+
+export const publishStatusSchema = z.object({
+  status: z.enum(["pending", "ready", "published"]),
+  network: z.enum(["xlayer-testnet", "xlayer-mainnet"]),
+  payload: xLayerPublicationSchema,
+  checklist: publicationChecklistItemSchema.array(),
+  txHash: z.string().min(1).optional(),
+  explorerUrl: z.string().url().optional(),
+  publishedAt: z.string().optional(),
+});
+
 export const analysisRequestSchema = z.object({
   officialTerms: z.string().trim().min(1),
   publicMarketing: z.string().trim().min(1),
@@ -65,6 +82,10 @@ export type AnalysisReport = z.infer<typeof analysisReportSchema>;
 export type AnalysisRequest = z.infer<typeof analysisRequestSchema>;
 export type AnalysisProvenance = NonNullable<AnalysisReport["provenance"]>;
 export type XLayerPublication = z.infer<typeof xLayerPublicationSchema>;
+export type PublicationChecklistItem = z.infer<
+  typeof publicationChecklistItemSchema
+>;
+export type PublishStatus = z.infer<typeof publishStatusSchema>;
 
 const demoFindings: Finding[] = [
   {
@@ -309,5 +330,86 @@ export function buildXLayerPublication(
     highSeverityCount,
     summary: report.summary,
     timestamp: report.checkedAt,
+  });
+}
+
+export function buildPublicationChecklist(
+  report: AnalysisReport,
+  publication?: XLayerPublication | null,
+): PublicationChecklistItem[] {
+  const hasProvenance = Boolean(report.provenance);
+  const hasSourceLabel = Boolean(report.provenance?.sourceLabel);
+  const hasSourceUrl = Boolean(report.provenance?.sourceUrl);
+  const hasPayload = Boolean(publication);
+  const hasPublishedTx = Boolean(report.provenance?.chainRecord.txHash);
+  const published = report.provenance?.chainRecord.status === "published";
+
+  return publicationChecklistItemSchema.array().parse([
+    {
+      key: "source-label",
+      label: "Source label",
+      detail: hasSourceLabel
+        ? `Using ${report.provenance?.sourceLabel}`
+        : "Add a source label before publishing.",
+      complete: hasSourceLabel,
+    },
+    {
+      key: "source-url",
+      label: "Source URL",
+      detail: hasSourceUrl
+        ? "Source URL is attached to the report."
+        : "Add the deployed app or project source URL when available.",
+      complete: hasSourceUrl,
+    },
+    {
+      key: "analysis-provenance",
+      label: "Analysis provenance",
+      detail: hasProvenance
+        ? `Provider: ${report.provenance?.provider}, network: ${report.provenance?.network}.`
+        : "Run a report to create provenance.",
+      complete: hasProvenance,
+    },
+    {
+      key: "publication-payload",
+      label: "Publication payload",
+      detail: hasPayload
+        ? "Compact X Layer payload prepared."
+        : "Prepare the payload before testnet publish.",
+      complete: hasPayload,
+    },
+    {
+      key: "chain-record",
+      label: "Chain record",
+      detail: published
+        ? "Onchain record marked as published."
+        : hasPublishedTx
+          ? "Transaction hash exists, but the record is not marked published yet."
+          : "Awaiting a testnet broadcast and transaction hash.",
+      complete: published || hasPublishedTx,
+    },
+  ]);
+}
+
+export function buildPublishStatus(
+  report: AnalysisReport,
+  options?: {
+    txHash?: string;
+    explorerUrl?: string;
+    publishedAt?: string;
+  },
+): PublishStatus {
+  const payload = buildXLayerPublication(report);
+  const checklist = buildPublicationChecklist(report, payload);
+  const hasTx = Boolean(options?.txHash);
+  const hasPublishedAt = Boolean(options?.publishedAt);
+
+  return publishStatusSchema.parse({
+    status: hasTx && hasPublishedAt ? "published" : "ready",
+    network: payload.network,
+    payload,
+    checklist,
+    txHash: options?.txHash,
+    explorerUrl: options?.explorerUrl,
+    publishedAt: options?.publishedAt,
   });
 }
