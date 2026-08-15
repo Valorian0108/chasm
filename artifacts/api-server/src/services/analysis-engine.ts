@@ -14,13 +14,27 @@ export type AnalysisEngine = {
   ) => Promise<{ report: AnalysisReport; provider: AnalysisProvider }>;
 };
 
+function normalizeAiContent(content: string) {
+  const trimmed = content.trim();
+
+  if (trimmed.startsWith("```")) {
+    return trimmed
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
+  }
+
+  return trimmed;
+}
+
 export function createAnalysisEngine(): AnalysisEngine {
-  const provider = (process.env.ANALYSIS_PROVIDER ?? "local") as AnalysisProvider;
+  const provider = (process.env.ANALYSIS_PROVIDER ?? "ai") as AnalysisProvider;
 
   if (provider === "ai") {
-    const aiBaseUrl = process.env.AI_BASE_URL;
-    const aiApiKey = process.env.AI_API_KEY;
-    const aiModel = process.env.AI_MODEL ?? "gpt-4.1-mini";
+    const aiBaseUrl =
+      process.env.AI_BASE_URL ?? process.env.OPENAI_BASE_URL ?? "https://api.openai.com";
+    const aiApiKey = process.env.AI_API_KEY ?? process.env.OPENAI_API_KEY;
+    const aiModel = process.env.AI_MODEL ?? process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
 
     if (!aiBaseUrl || !aiApiKey) {
       return {
@@ -81,7 +95,9 @@ export function createAnalysisEngine(): AnalysisEngine {
             throw new Error("AI provider returned no content");
           }
 
-          const parsed = analysisReportSchema.parse(JSON.parse(content));
+          const parsed = analysisReportSchema.parse(
+            JSON.parse(normalizeAiContent(content)),
+          );
           return {
             report: parsed as AnalysisReport,
             provider: "ai",

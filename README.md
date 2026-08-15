@@ -54,9 +54,11 @@ The tool is a screening and research aid. It is not legal, financial, investment
 - A primary **Check claims** action.
 - A **New check** reset action.
 
-### Working local analysis
+### Working analysis
 
-The current version runs without an AI provider or API key. It uses a transparent, deterministic local ruleset to identify common mismatch patterns, including:
+The app is designed to use an AI-backed analysis provider when credentials are available. If the AI provider is not configured, it falls back to a transparent, deterministic local ruleset so the product still works during development.
+
+The local ruleset identifies common mismatch patterns, including:
 
 - Ownership language versus contractual economic exposure.
 - Strong public-market liquidity language versus platform-managed liquidity.
@@ -65,9 +67,15 @@ The current version runs without an AI provider or API key. It uses a transparen
 
 This local path exists so the product can be demonstrated and tested even when external AI access is unavailable.
 
-Optional AI environment variables can enable the provider-backed path:
+The default AI provider expects OpenAI-compatible settings:
 
 - `ANALYSIS_PROVIDER=ai`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `OPENAI_BASE_URL` if you are using a compatible proxy or self-hosted endpoint
+
+Legacy aliases are also supported:
+
 - `AI_BASE_URL`
 - `AI_API_KEY`
 - `AI_MODEL`
