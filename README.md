@@ -80,6 +80,8 @@ Legacy aliases are also supported:
 - `AI_API_KEY`
 - `AI_MODEL`
 
+Copy `.env.example` to `.env` for local development, then fill in the database and AI values you actually want to use.
+
 ### Shared screening contract
 
 - The local analyzer now lives in a shared workspace package so the frontend and API server use the same screening logic.

@@ -1,4 +1,7 @@
+import { loadEnvFiles } from "./load-env";
 import pino from "pino";
+
+loadEnvFiles();
 
 const isProduction = process.env.NODE_ENV === "production";
 

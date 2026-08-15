@@ -1,9 +1,12 @@
+import { loadEnvFiles } from "../lib/load-env";
 import {
   analyzeClaims,
   type AnalysisRequest,
   type AnalysisReport,
   analysisReportSchema,
 } from "@workspace/api-zod";
+
+loadEnvFiles();
 
 export type AnalysisProvider = "local" | "ai" | "fallback";
 
