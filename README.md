@@ -268,6 +268,23 @@ When the next phase begins, the owner will need to provide or authorize these se
 
 The owner should keep all private wallet credentials and provider credentials private.
 
+### X Layer environment setup
+
+The repo now exposes the X Layer values in `.env.example` so testnet setup has one obvious place for the network details:
+
+- `X_LAYER_TARGET_NETWORK=xlayer-testnet`
+- `X_LAYER_WALLET_ADDRESS`
+- `X_LAYER_CONTRACT_ADDRESS`
+- `X_LAYER_TESTNET_CHAIN_ID=1952`
+- `X_LAYER_TESTNET_RPC_URL=https://testrpc.xlayer.tech/terigon`
+- `X_LAYER_TESTNET_EXPLORER_URL=https://www.okx.com/web3/explorer/xlayer-test`
+- `X_LAYER_MAINNET_CHAIN_ID=196`
+- `X_LAYER_MAINNET_RPC_URL=https://rpc.xlayer.tech`
+- `X_LAYER_MAINNET_EXPLORER_URL=https://www.okx.com/web3/explorer/xlayer`
+- `X_LAYER_FAUCET_URL=https://www.okx.com/xlayer/faucet`
+
+The current defaults follow the official X Layer docs for chain ID and explorer configuration.
+
 ## Current status
 
 Claims Checker is a working local proof of concept with a polished user interface and an evidence-led report flow.
