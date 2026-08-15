@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { type ReactNode } from 'react';
 import { AlertTriangle, ArrowRight, Check, CheckCircle2, ChevronDown, ClipboardCheck, FileText, Fingerprint, Info, Loader2, LockKeyhole, RotateCcw, Scale, ShieldCheck, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { buildPublicationChecklist, buildXLayerPublication, type Finding, type AnalysisReport as Report, type Severity } from '@workspace/api-zod';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -53,26 +54,30 @@ const demoFindings: Finding[] = [
 
 function Header({ onReset }: { onReset: () => void }) {
   return (
-    <header className="border-b border-[hsl(var(--sidebar-border))] bg-[hsl(var(--sidebar))] text-[hsl(var(--sidebar-foreground))]">
-      <div className="mx-auto flex min-h-[76px] max-w-[1480px] items-center justify-between px-5 py-4 sm:px-8 lg:px-12">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center border border-[hsl(var(--sidebar-primary)/.55)] bg-[hsl(var(--sidebar-primary)/.12)] text-[hsl(var(--sidebar-primary))]" aria-hidden="true">
-            <Fingerprint size={22} strokeWidth={1.8} />
-          </div>
-          <div>
-            <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-[hsl(var(--sidebar-primary))]">Evidence room / 01</div>
-            <div className="mt-0.5 font-serif text-[25px] leading-none tracking-tight">Claims Checker</div>
-          </div>
+    <header className="mx-auto max-w-[1480px] px-5 pt-5 sm:px-8 lg:px-12">
+      <div className="border-y border-[hsl(var(--border))] py-5">
+        <div className="text-center">
+          <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[hsl(var(--muted-foreground))]">
+            No. 03 · AI Season · Claims dossier
+          </p>
+          <h1 className="mt-3 font-serif text-[clamp(2.8rem,6vw,5.8rem)] leading-[.9] tracking-tight text-[hsl(var(--foreground))]">
+            Claims Checker
+          </h1>
+          <p className="mx-auto mt-4 max-w-3xl text-sm leading-7 text-[hsl(var(--muted-foreground))] sm:text-[15px]">
+            Screens public claims against the record, keeps the evidence visible, and preserves the path from source to publication.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-2 border-l border-[hsl(var(--sidebar-border))] pl-4 text-[11px] uppercase tracking-[0.14em] text-[hsl(var(--sidebar-foreground)/.58)] sm:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--sidebar-primary))]" />
-            Local analysis active
-          </div>
-          <button type="button" onClick={onReset} data-testid="button-reset-workspace" className="inline-flex items-center gap-2 border border-[hsl(var(--sidebar-border))] px-3 py-2 text-xs text-[hsl(var(--sidebar-foreground)/.72)] transition-colors hover:border-[hsl(var(--sidebar-primary)/.7)] hover:text-[hsl(var(--sidebar-primary))]">
-            <RotateCcw size={14} />
-            <span className="hidden sm:inline">New check</span>
-          </button>
+
+        <nav className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
+          <TypographicLink href="#sources">Sources</TypographicLink>
+          <TypographicLink href="#report">Reading</TypographicLink>
+          <TypographicLink href="#ledger">Ledger</TypographicLink>
+          <TypographicLink onClick={onReset}>New check</TypographicLink>
+        </nav>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[hsl(var(--border))] pt-4 font-mono text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
+          <span>Editorial / Split studio / Newsprint</span>
+          <span>AI when configured, local fallback if needed</span>
         </div>
       </div>
     </header>
@@ -88,6 +93,59 @@ function FieldLabel({ index, children, count }: { index: string; children: strin
       </label>
       <span className="font-mono text-[10px] tabular-nums text-[hsl(var(--muted-foreground)/.7)]">{count.toLocaleString()} chars</span>
     </div>
+  );
+}
+
+function SectionHeading({
+  index,
+  title,
+  lead,
+}: {
+  index: string;
+  title: string;
+  lead: string;
+}) {
+  return (
+    <header className="grid gap-3 lg:grid-cols-[9rem_minmax(0,1fr)] lg:items-start">
+      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[hsl(var(--muted-foreground))]">
+        {index}
+      </div>
+      <div className="min-w-0">
+        <h2 className="font-serif text-4xl leading-[.95] tracking-tight text-[hsl(var(--foreground))] sm:text-5xl">
+          {title}
+        </h2>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-[hsl(var(--muted-foreground))] sm:text-[15px]">
+          {lead}
+        </p>
+      </div>
+    </header>
+  );
+}
+
+function TypographicLink({
+  children,
+  onClick,
+  href,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  href?: string;
+}) {
+  const className =
+    'inline-flex items-center gap-2 text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))] underline decoration-[hsl(var(--primary)/.25)] underline-offset-[6px] transition-colors hover:decoration-[hsl(var(--primary))]';
+
+  if (href) {
+    return (
+      <a href={href} className={className}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {children}
+    </button>
   );
 }
 
@@ -131,91 +189,126 @@ function Workspace({ onReport }: { onReport: (report: Report) => void }) {
   };
 
   return (
-    <main className="mx-auto max-w-[1480px] px-5 pb-20 pt-10 sm:px-8 lg:px-12 lg:pt-14">
-      <section className="max-w-4xl reveal">
-        <div className="mb-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[hsl(var(--secondary))]">
-          <span className="h-px w-7 bg-[hsl(var(--secondary))]" />
-          Compare public language to the record
-        </div>
-        <h1 className="max-w-3xl font-serif text-5xl leading-[.94] tracking-tight text-[hsl(var(--foreground))] sm:text-7xl">
-          Find the promise<br />
-          <em className="text-[hsl(var(--destructive))]">behind the promise.</em>
-        </h1>
-        <p className="mt-6 max-w-2xl text-base leading-7 text-[hsl(var(--muted-foreground))] sm:text-lg">
-          Put marketing copy beside the official terms. Claims Checker surfaces language that the legal record does not clearly support — before it becomes a research note, a trade, or a headline.
-        </p>
-      </section>
+    <main id="sources" className="mx-auto max-w-[1480px] px-5 pb-20 pt-10 sm:px-8 lg:px-12 lg:pt-14">
+      <section className="grid gap-8 border-b border-[hsl(var(--border))] pb-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
+        <SectionHeading
+          index="01"
+          title="Source dossier"
+          lead="Paste the terms and the public copy. The app holds both versions in view so the comparison feels like reading a file, not filling a form."
+        />
 
-      <section className="mt-10 grid gap-5 lg:grid-cols-[1fr_1fr_240px] reveal reveal-delay-1">
-        <div className="flex min-h-[370px] flex-col border border-[hsl(var(--card-border))] bg-[hsl(var(--card)/.68)] p-5 shadow-[0_8px_30px_hsl(190_28%_16%/.04)] sm:p-6">
-          <FieldLabel index="01" count={legalTerms.length}>Official terms</FieldLabel>
-          <textarea value={legalTerms} onChange={(event) => setLegalTerms(event.target.value)} data-testid="input-legal-terms" aria-label="Official legal terms" placeholder="Paste the project's terms of use, risk disclosures, or legal conditions here." className="min-h-[280px] flex-1 resize-none border-0 bg-transparent p-0 text-[15px] leading-7 text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground)/.58)] focus:ring-0" />
-          <div className="mt-4 flex items-center gap-2 border-t border-dashed border-[hsl(var(--border))] pt-3 text-[11px] text-[hsl(var(--muted-foreground))]">
-            <LockKeyhole size={13} />
-            Source stays in this browser
+        <aside className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4">
+            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Analysis mode</div>
+            <div className="mt-2 text-sm text-[hsl(var(--foreground))]">AI first, local fallback ready</div>
+            <div className="mt-1 text-xs leading-6 text-[hsl(var(--muted-foreground))]">The report shows which provider answered, so judges can see the actual route used.</div>
           </div>
-        </div>
-        <div className="flex min-h-[370px] flex-col border border-[hsl(var(--card-border))] bg-[hsl(var(--card)/.68)] p-5 shadow-[0_8px_30px_hsl(190_28%_16%/.04)] sm:p-6">
-          <FieldLabel index="02" count={marketingCopy.length}>Public marketing</FieldLabel>
-          <textarea value={marketingCopy} onChange={(event) => setMarketingCopy(event.target.value)} data-testid="input-marketing-copy" aria-label="Public marketing copy" placeholder="Paste the landing page, campaign copy, pitch deck language, or social post here." className="min-h-[280px] flex-1 resize-none border-0 bg-transparent p-0 text-[15px] leading-7 text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground)/.58)] focus:ring-0" />
-          <div className="mt-4 flex items-center gap-2 border-t border-dashed border-[hsl(var(--border))] pt-3 text-[11px] text-[hsl(var(--muted-foreground))]">
-            <FileText size={13} />
-            Claims are quoted in the report
-          </div>
-        </div>
-        <aside className="flex flex-col justify-between border border-[hsl(var(--border))] bg-[hsl(var(--primary))] p-5 text-[hsl(var(--primary-foreground))] sm:p-6">
-          <div>
-            <div className="mb-7 flex items-center justify-between">
-              <Scale size={21} strokeWidth={1.6} className="text-[hsl(var(--accent))]" />
-              <span className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary-foreground)/.46)]">POC / v0.1</span>
-            </div>
-            <h2 className="font-serif text-3xl leading-none">A quiet<br />second look.</h2>
-            <p className="mt-4 text-sm leading-6 text-[hsl(var(--primary-foreground)/.64)]">A local ruleset checks absolute promises, implied certainty, and terms that qualify risk.</p>
-            <div className="mt-6 space-y-3 border-t border-[hsl(var(--primary-foreground)/.14)] pt-5">
-              <div>
-                <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--primary-foreground)/.56)]">Source label</label>
-                <input
-                  value={sourceLabel}
-                  onChange={(event) => setSourceLabel(event.target.value)}
-                  data-testid="input-source-label"
-                  aria-label="Source label"
-                  placeholder="Browser screening session"
-                  className="w-full border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.04)] px-3 py-2 text-sm text-[hsl(var(--primary-foreground))] outline-none placeholder:text-[hsl(var(--primary-foreground)/.34)]"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--primary-foreground)/.56)]">Source URL</label>
-                <input
-                  value={sourceUrl}
-                  onChange={(event) => setSourceUrl(event.target.value)}
-                  data-testid="input-source-url"
-                  aria-label="Source URL"
-                  placeholder="https://..."
-                  className="w-full border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.04)] px-3 py-2 text-sm text-[hsl(var(--primary-foreground))] outline-none placeholder:text-[hsl(var(--primary-foreground)/.34)]"
-                />
-              </div>
-            </div>
-          </div>
-          <div className="mt-8">
-            <button type="button" onClick={loadDemo} data-testid="button-load-demo" className="group mb-3 flex w-full items-center justify-between border border-[hsl(var(--primary-foreground)/.25)] px-3 py-3 text-left text-xs text-[hsl(var(--primary-foreground)/.82)] transition-colors hover:border-[hsl(var(--accent)/.8)] hover:text-[hsl(var(--accent))]">
-              <span className="flex items-center gap-2"><Sparkles size={14} /> Load example</span>
-              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-            </button>
-            <button type="button" onClick={checkClaims} disabled={isChecking} data-testid="button-check-claims" className="group flex w-full items-center justify-between bg-[hsl(var(--accent))] px-3 py-3.5 text-left text-sm font-semibold text-[hsl(var(--accent-foreground))] transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-80">
-              <span>{isChecking ? 'Reading the record…' : 'Check claims'}</span>
-              {isChecking ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />}
-            </button>
+          <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4">
+            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Current source</div>
+            <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{sourceLabel}</div>
+            <div className="mt-1 text-xs leading-6 text-[hsl(var(--muted-foreground))] break-all">{sourceUrl || 'No source URL recorded yet'}</div>
           </div>
         </aside>
       </section>
 
-      {error && <div role="alert" data-testid="status-input-error" className="mt-4 flex items-center gap-2 border-l-2 border-[hsl(var(--destructive))] bg-[hsl(var(--destructive)/.08)] px-4 py-3 text-sm text-[hsl(var(--destructive))]"><TriangleAlert size={16} />{error}</div>}
+      <section className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <article className="paper-panel">
+          <FieldLabel index="01" count={legalTerms.length}>Official terms</FieldLabel>
+          <textarea
+            value={legalTerms}
+            onChange={(event) => setLegalTerms(event.target.value)}
+            data-testid="input-legal-terms"
+            aria-label="Official legal terms"
+            placeholder="Paste the project's terms of use, disclosures, or conditions here."
+            className="min-h-[320px] w-full resize-none border-0 bg-transparent p-0 text-[15px] leading-8 text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground)/.54)] focus:ring-0"
+          />
+          <div className="mt-4 border-t border-[hsl(var(--border))] pt-3 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+            <LockKeyhole size={13} className="mr-2 inline-block align-[-2px]" />
+            Source stays in this browser until you save it.
+          </div>
+        </article>
 
-      <div className="mt-9 grid gap-4 border-y border-[hsl(var(--border))] py-5 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
+        <article className="paper-panel">
+          <FieldLabel index="02" count={marketingCopy.length}>Public marketing</FieldLabel>
+          <textarea
+            value={marketingCopy}
+            onChange={(event) => setMarketingCopy(event.target.value)}
+            data-testid="input-marketing-copy"
+            aria-label="Public marketing copy"
+            placeholder="Paste the landing page, campaign copy, pitch deck language, or social post here."
+            className="min-h-[320px] w-full resize-none border-0 bg-transparent p-0 text-[15px] leading-8 text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground)/.54)] focus:ring-0"
+          />
+          <div className="mt-4 border-t border-[hsl(var(--border))] pt-3 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+            <FileText size={13} className="mr-2 inline-block align-[-2px]" />
+            Claims are quoted verbatim in the report.
+          </div>
+        </article>
+      </section>
+
+      <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <article className="paper-panel">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Source label</label>
+              <input
+                value={sourceLabel}
+                onChange={(event) => setSourceLabel(event.target.value)}
+                data-testid="input-source-label"
+                aria-label="Source label"
+                placeholder="Browser screening session"
+                className="w-full border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground)/.34)]"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Source URL</label>
+              <input
+                value={sourceUrl}
+                onChange={(event) => setSourceUrl(event.target.value)}
+                data-testid="input-source-url"
+                aria-label="Source URL"
+                placeholder="https://..."
+                className="w-full border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground)/.34)]"
+              />
+            </div>
+          </div>
+          {error && (
+            <div role="alert" data-testid="status-input-error" className="mt-4 flex items-center gap-2 border-l-2 border-[hsl(var(--destructive))] bg-[hsl(var(--destructive)/.08)] px-4 py-3 text-sm text-[hsl(var(--destructive))]">
+              <TriangleAlert size={16} />
+              {error}
+            </div>
+          )}
+        </article>
+
+        <aside className="paper-panel flex flex-col justify-between">
+          <div>
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <Scale size={21} strokeWidth={1.6} className="text-[hsl(var(--secondary))]" />
+              <span className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">POC / v0.1</span>
+            </div>
+            <h2 className="font-serif text-3xl leading-none text-[hsl(var(--foreground))]">A quiet second look.</h2>
+            <p className="mt-4 text-sm leading-6 text-[hsl(var(--muted-foreground))]">The reading checks absolute promises, implied certainty, and language that outpaces the terms.</p>
+          </div>
+          <div className="mt-7 space-y-3 border-t border-[hsl(var(--border))] pt-5">
+            <button type="button" onClick={loadDemo} data-testid="button-load-demo" className="group flex w-full items-center justify-between text-left text-sm text-[hsl(var(--foreground))] transition-colors hover:text-[hsl(var(--secondary))]">
+              <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.18em]"><Sparkles size={14} /> Load example</span>
+              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+            </button>
+            <button type="button" onClick={checkClaims} disabled={isChecking} data-testid="button-check-claims" className="group flex w-full items-center justify-between border border-[hsl(var(--primary))] px-4 py-3 text-left text-[10px] uppercase tracking-[.18em] text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))] disabled:cursor-wait disabled:opacity-70">
+              <span>{isChecking ? 'Reading the record…' : 'Check claims'}</span>
+              {isChecking ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />}
+            </button>
+            <div className="pt-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+              The interface keeps the source visible, the action explicit, and the result readable to judges.
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section className="mt-10 grid gap-4 border-y border-[hsl(var(--border))] py-5 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
         <div className="flex gap-3"><ShieldCheck className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">Evidence-led</strong><br />Every flag includes the language behind it.</span></div>
         <div className="flex gap-3"><Fingerprint className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">AI when configured</strong><br />OpenAI-compatible analysis when keys are present, with local fallback if not.</span></div>
         <div className="flex gap-3"><Info className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">Not legal advice</strong><br />A screening layer for human investigators.</span></div>
-      </div>
+      </section>
     </main>
   );
 }
@@ -275,164 +368,211 @@ function ReportView({
   );
 
   return (
-    <main className="mx-auto max-w-[1480px] px-5 pb-20 pt-10 sm:px-8 lg:px-12 lg:pt-14">
-      <section className="flex flex-col justify-between gap-6 border-b border-[hsl(var(--border))] pb-9 sm:flex-row sm:items-end reveal">
-        <div>
-          <div className="mb-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[hsl(var(--secondary))]"><span className="h-px w-7 bg-[hsl(var(--secondary))]" />Screening report / completed</div>
-          <h1 className="font-serif text-5xl leading-[.94] tracking-tight sm:text-7xl">The record<br /><em className="text-[hsl(var(--destructive))]">does not agree.</em></h1>
-          <p className="mt-5 max-w-xl text-base leading-7 text-[hsl(var(--muted-foreground))]">{report.summary} Read each evidence pair before making a judgment.</p>
-        </div>
-        <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-          <div data-testid="status-report" className="flex items-center gap-2 border border-[hsl(var(--destructive)/.35)] bg-[hsl(var(--destructive)/.08)] px-3 py-2 font-mono text-[11px] uppercase tracking-[.14em] text-[hsl(var(--destructive))]"><span className="h-1.5 w-1.5 rounded-full bg-current" />{report.status === 'flagged' ? 'Review required' : 'No flags found'}</div>
-          {report.provenance && <AnalysisProviderBadge provider={report.provenance.provider} />}
-          <span className="font-mono text-[10px] text-[hsl(var(--muted-foreground))]">Checked {checkedAt}</span>
-        </div>
+    <main id="report" className="mx-auto max-w-[1480px] px-5 pb-20 pt-10 sm:px-8 lg:px-12 lg:pt-14">
+      <section className="grid gap-8 border-b border-[hsl(var(--border))] pb-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
+        <SectionHeading
+          index="02"
+          title="Reading the record"
+          lead={`${report.summary} The result is split into summary, evidence, and publication so the judging path stays visible.`}
+        />
+
+        <aside className="grid gap-3">
+          <div className="paper-panel">
+            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Score</div>
+            <div className="mt-2 flex items-end justify-between gap-4">
+              <div data-testid="text-report-score" className="font-serif text-6xl leading-none text-[hsl(var(--foreground))]">
+                {report.score}
+                <span className="text-2xl text-[hsl(var(--muted-foreground))]">/100</span>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-[hsl(var(--muted-foreground))]">
+                  {report.status === 'flagged' ? 'Review required' : 'No flags found'}
+                </div>
+                <div className="mt-2 inline-flex items-center gap-2 border border-[hsl(var(--destructive)/.35)] bg-[hsl(var(--destructive)/.08)] px-3 py-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--destructive))]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  {checkedAt}
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 h-px bg-[hsl(var(--border))]" />
+            <div className="mt-4 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+              {report.score < 60 ? 'Material gaps in support.' : 'Some language needs context.'}
+            </div>
+          </div>
+
+          <div className="paper-panel">
+            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Signals</div>
+            <div className="mt-2 flex items-end gap-5">
+              <div>
+                <div data-testid="text-finding-count" className="font-serif text-5xl leading-none text-[hsl(var(--foreground))]">{report.findings.length}</div>
+                <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">total findings</div>
+              </div>
+              <div className="mb-1 h-10 w-px bg-[hsl(var(--border))]" />
+              <div>
+                <div className="font-serif text-3xl leading-none text-[hsl(var(--destructive))]">{highCount}</div>
+                <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">high severity</div>
+              </div>
+            </div>
+          </div>
+        </aside>
       </section>
 
-      <section className="grid gap-5 py-8 sm:grid-cols-[220px_1fr_1fr] reveal reveal-delay-1">
-        <div className="border border-[hsl(var(--card-border))] bg-[hsl(var(--card)/.68)] p-5">
-          <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Alignment score</div>
-          <div data-testid="text-report-score" className="mt-3 font-serif text-7xl leading-none text-[hsl(var(--foreground))]">{report.score}<span className="text-3xl text-[hsl(var(--muted-foreground))]">/100</span></div>
-          <div className="mt-5 h-1.5 bg-[hsl(var(--muted))]"><div className="h-full bg-[hsl(var(--destructive))] transition-all duration-700" style={{ width: `${report.score}%` }} /></div>
-          <div className="mt-3 text-xs leading-5 text-[hsl(var(--muted-foreground))]">{report.score < 60 ? 'Material gaps in support.' : 'Some language needs context.'}</div>
-        </div>
-        <div className="border border-[hsl(var(--card-border))] bg-[hsl(var(--card)/.68)] p-5 sm:p-6">
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]"><AlertTriangle size={14} className="text-[hsl(var(--destructive))]" /> Signals found</div>
-          <div className="mt-5 flex items-end gap-5">
-            <div><div data-testid="text-finding-count" className="font-serif text-5xl leading-none">{report.findings.length}</div><div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">total findings</div></div>
-            <div className="mb-1 h-10 w-px bg-[hsl(var(--border))]" />
-            <div><div className="font-serif text-3xl leading-none text-[hsl(var(--destructive))]">{highCount}</div><div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">high severity</div></div>
+      <section className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,.88fr)_minmax(0,1.12fr)]">
+        <article className="paper-panel">
+          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">
+            <ClipboardCheck size={14} className="text-[hsl(var(--secondary))]" />
+            Next move
           </div>
-        </div>
-        <div className="border border-[hsl(var(--card-border))] bg-[hsl(var(--primary))] p-5 text-[hsl(var(--primary-foreground))] sm:p-6">
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary-foreground)/.55)]"><ClipboardCheck size={14} className="text-[hsl(var(--accent))]" /> Next move</div>
-          <p className="mt-5 text-sm leading-6 text-[hsl(var(--primary-foreground)/.76)]">{highCount ? 'Preserve the quoted language, then ask the project to reconcile each promise with its terms.' : 'Keep the source text with your research notes and review implied claims manually.'}</p>
-          <button type="button" onClick={() => setShowMethod((visible) => !visible)} data-testid="button-toggle-method" className="mt-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">{showMethod ? 'Hide method' : 'How this works'}<ChevronDown size={14} className={showMethod ? 'rotate-180 transition-transform' : 'transition-transform'} /></button>
-          <button type="button" onClick={async () => setPublication(await preparePublication(report))} data-testid="button-prepare-publication" className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">Prepare X Layer payload</button>
-          <button type="button" onClick={async () => setPublishStatus(await preparePublishStatus(report))} data-testid="button-prepare-publish-status" className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">Prepare publish status</button>
-          <div className="mt-3 space-y-3 rounded-none border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.04)] p-3">
-            <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--primary-foreground)/.56)]">Attach testnet receipt</div>
-            <input
-              value={publishTxHash}
-              onChange={(event) => setPublishTxHash(event.target.value)}
-              data-testid="input-publish-tx-hash"
-              aria-label="Publish transaction hash"
-              placeholder="0x..."
-              className="w-full border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.05)] px-3 py-2 text-xs text-[hsl(var(--primary-foreground))] outline-none placeholder:text-[hsl(var(--primary-foreground)/.34)]"
-            />
-            <input
-              value={publishExplorerUrl}
-              onChange={(event) => setPublishExplorerUrl(event.target.value)}
-              data-testid="input-publish-explorer-url"
-              aria-label="Publish explorer URL"
-              placeholder="https://..."
-              className="w-full border border-[hsl(var(--primary-foreground)/.14)] bg-[hsl(var(--primary-foreground)/.05)] px-3 py-2 text-xs text-[hsl(var(--primary-foreground))] outline-none placeholder:text-[hsl(var(--primary-foreground)/.34)]"
-            />
-            <button
-              type="button"
-              disabled={!publishTxHash.trim()}
-              onClick={async () => setPublishStatus(await finalizePublishStatus(report, {
-                txHash: publishTxHash.trim(),
-                explorerUrl: publishExplorerUrl.trim() || undefined,
-                publishedAt: new Date().toISOString(),
-              }))}
-              data-testid="button-attach-publish-receipt"
-              className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))] disabled:opacity-40"
+          <p className="mt-4 text-sm leading-7 text-[hsl(var(--foreground))]">
+            {highCount
+              ? 'Preserve the quoted language, then ask the project to reconcile each promise with its terms.'
+              : 'Keep the source text with your research notes and review implied claims manually.'}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-4">
+            <TypographicLink onClick={() => setShowMethod((visible) => !visible)}>
+              {showMethod ? 'Hide method' : 'How this works'}
+            </TypographicLink>
+            <TypographicLink
+              onClick={async () => setPublication(await preparePublication(report))}
             >
-              Mark published on testnet
-            </button>
+              Prepare X Layer payload
+            </TypographicLink>
+            <TypographicLink
+              onClick={async () => setPublishStatus(await preparePublishStatus(report))}
+            >
+              Prepare publish status
+            </TypographicLink>
+            <TypographicLink
+              onClick={async () => {
+                setSaveStatus('saving');
+                try {
+                  await saveReport(report);
+                  await onRecordSaved();
+                  setSaveStatus('saved');
+                } catch (error) {
+                  console.warn(error);
+                  setSaveStatus('error');
+                }
+              }}
+            >
+              Save research record
+            </TypographicLink>
           </div>
-          <button type="button" onClick={async () => {
-            setSaveStatus('saving');
-            try {
-              await saveReport(report);
-              await onRecordSaved();
-              setSaveStatus('saved');
-            } catch (error) {
-              console.warn(error);
-              setSaveStatus('error');
-            }
-          }} data-testid="button-save-report" className="mt-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--accent))]">Save research record</button>
-          {showMethod && <p className="mt-3 border-t border-[hsl(var(--primary-foreground)/.15)] pt-3 text-xs leading-5 text-[hsl(var(--primary-foreground)/.56)]">The local ruleset looks for absolute certainty, return promises, protection language, and hands-off framing. It does not determine truth or replace counsel.</p>}
-          {saveStatus !== 'idle' && <p className="mt-3 text-xs text-[hsl(var(--primary-foreground)/.7)]">{saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Record saved for later review.' : 'Could not save record.'}</p>}
-        </div>
+          {showMethod && (
+            <p className="mt-5 border-t border-[hsl(var(--border))] pt-4 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+              The local ruleset looks for absolute certainty, return promises, protection language, and hands-off framing. It does not determine truth or replace counsel.
+            </p>
+          )}
+          {saveStatus !== 'idle' && (
+            <p className="mt-4 text-xs text-[hsl(var(--muted-foreground))]">
+              {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Record saved for later review.' : 'Could not save record.'}
+            </p>
+          )}
+        </article>
+
+        <aside className="paper-panel">
+          <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Publication shell</div>
+          <div className="mt-4 grid gap-3 text-sm">
+            <div className="flex items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-3">
+              <span className="text-[hsl(var(--muted-foreground))]">Analysis mode</span>
+              <span className="font-medium text-[hsl(var(--foreground))]">
+                {report.provenance?.provider?.toUpperCase() ?? 'LOCAL'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-3">
+              <span className="text-[hsl(var(--muted-foreground))]">Network</span>
+              <span className="font-medium text-[hsl(var(--foreground))]">{report.provenance?.network ?? 'local'}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-3">
+              <span className="text-[hsl(var(--muted-foreground))]">Source</span>
+              <span className="max-w-[14rem] truncate font-medium text-[hsl(var(--foreground))]">{report.provenance?.sourceLabel ?? 'Browser session'}</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-[hsl(var(--muted-foreground))]">Receipt</span>
+              <span className="font-mono text-[11px] text-[hsl(var(--foreground))]">
+                {publishStatus?.status === 'published' ? 'published' : publishStatus?.status ?? 'pending'}
+              </span>
+            </div>
+          </div>
+        </aside>
       </section>
 
-      {report.provenance && <section className="grid gap-4 rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.72)] p-5 reveal reveal-delay-2 sm:grid-cols-3">
-        <div>
-          <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Analysis mode</div>
-          <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{report.provenance.provider.toUpperCase()}</div>
-          <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">Network: {report.provenance.network}</div>
-        </div>
-        <div>
-          <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Source fingerprint</div>
-          <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{report.provenance.sourceLabel ?? 'Browser session'}</div>
-          <div className="mt-2 font-mono text-[11px] text-[hsl(var(--foreground))]">Terms {report.provenance.hashes.officialTerms.slice(0, 12)}…</div>
-          <div className="mt-1 font-mono text-[11px] text-[hsl(var(--foreground))]">Marketing {report.provenance.hashes.publicMarketing.slice(0, 12)}…</div>
-        </div>
-        <div>
-          <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">X Layer record</div>
-          <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{report.provenance.chainRecord.status === 'published' ? 'Published' : 'Pending'}</div>
-          <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{report.provenance.chainRecord.txHash ? report.provenance.chainRecord.txHash.slice(0, 12) + '…' : 'No transaction yet'}</div>
-          <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{report.provenance.sourceUrl ?? 'No source URL recorded'}</div>
-        </div>
-      </section>}
-
-      <section className="mt-5 border border-[hsl(var(--border))] bg-[hsl(var(--card)/.72)] p-5 reveal reveal-delay-2">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">X Layer payload</div>
-            <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
+      <section className="mt-10 grid gap-8">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,.7fr)]">
+          <div className="paper-panel">
+            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">X Layer payload</div>
+            <div className="mt-3 text-sm leading-6 text-[hsl(var(--foreground))]">
               {publishStatus?.status === 'published'
                 ? 'Published on testnet'
                 : publishStatus?.status === 'ready'
                   ? 'Ready for testnet signing'
                   : 'Payload not prepared yet'}
             </div>
-          </div>
-          <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">
-            {publishStatus?.network ?? publication?.network ?? 'pending'}
-          </div>
-        </div>
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.3fr_.9fr]">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="border border-[hsl(var(--border))] p-3">
-              <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Report hash</div>
-              <div className="mt-2 font-mono text-[11px] break-all text-[hsl(var(--foreground))]">{publishStatus?.payload.reportHash ?? publication?.reportHash ?? 'Pending payload'}</div>
-            </div>
-            <div className="border border-[hsl(var(--border))] p-3">
-              <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Terms hash</div>
-              <div className="mt-2 font-mono text-[11px] break-all text-[hsl(var(--foreground))]">{publishStatus?.payload.officialTermsHash ?? publication?.officialTermsHash ?? 'Pending payload'}</div>
-            </div>
-            <div className="border border-[hsl(var(--border))] p-3">
-              <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Marketing hash</div>
-              <div className="mt-2 font-mono text-[11px] break-all text-[hsl(var(--foreground))]">{publishStatus?.payload.publicMarketingHash ?? publication?.publicMarketingHash ?? 'Pending payload'}</div>
-            </div>
-            <div className="border border-[hsl(var(--border))] p-3">
-              <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Findings</div>
-              <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{publishStatus ? `${publishStatus.payload.findingsCount} total / ${publishStatus.payload.highSeverityCount} high` : publication ? `${publication.findingsCount} total / ${publication.highSeverityCount} high` : 'Awaiting payload'}</div>
-              <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">{publishStatus?.payload.timestamp ?? publication?.timestamp ?? 'Timestamp pending'}</div>
-            </div>
-          </div>
-          <div className="border border-[hsl(var(--border))] bg-[hsl(var(--background))] p-4">
-            <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Publish checklist</div>
-            <div className="mt-3 space-y-3">
-              {(publishStatus?.checklist ?? publicationChecklist).map((item) => (
-                <div key={item.key} className="flex gap-3 border-b border-[hsl(var(--border))] pb-3 last:border-0 last:pb-0">
-                  <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.complete ? 'bg-[hsl(var(--secondary))]' : 'bg-[hsl(var(--muted-foreground))]'}`} />
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-[hsl(var(--foreground))]">{item.label}</div>
-                    <div className="mt-1 text-xs leading-5 text-[hsl(var(--muted-foreground))]">{item.detail}</div>
-                  </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="border border-[hsl(var(--border))] p-3">
+                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Report hash</div>
+                <div className="mt-2 break-all font-mono text-[11px] text-[hsl(var(--foreground))]">{publishStatus?.payload.reportHash ?? publication?.reportHash ?? 'Pending payload'}</div>
+              </div>
+              <div className="border border-[hsl(var(--border))] p-3">
+                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Terms hash</div>
+                <div className="mt-2 break-all font-mono text-[11px] text-[hsl(var(--foreground))]">{publishStatus?.payload.officialTermsHash ?? publication?.officialTermsHash ?? 'Pending payload'}</div>
+              </div>
+              <div className="border border-[hsl(var(--border))] p-3">
+                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Marketing hash</div>
+                <div className="mt-2 break-all font-mono text-[11px] text-[hsl(var(--foreground))]">{publishStatus?.payload.publicMarketingHash ?? publication?.publicMarketingHash ?? 'Pending payload'}</div>
+              </div>
+              <div className="border border-[hsl(var(--border))] p-3">
+                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Findings</div>
+                <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
+                  {publishStatus
+                    ? `${publishStatus.payload.findingsCount} total / ${publishStatus.payload.highSeverityCount} high`
+                    : publication
+                      ? `${publication.findingsCount} total / ${publication.highSeverityCount} high`
+                      : 'Awaiting payload'}
                 </div>
-              ))}
+                <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">
+                  {publishStatus?.payload.timestamp ?? publication?.timestamp ?? 'Timestamp pending'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="paper-panel">
+            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Receipt</div>
+            <div className="mt-3 space-y-3">
+              <input
+                value={publishTxHash}
+                onChange={(event) => setPublishTxHash(event.target.value)}
+                data-testid="input-publish-tx-hash"
+                aria-label="Publish transaction hash"
+                placeholder="0x..."
+                className="w-full border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-xs text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground)/.34)]"
+              />
+              <input
+                value={publishExplorerUrl}
+                onChange={(event) => setPublishExplorerUrl(event.target.value)}
+                data-testid="input-publish-explorer-url"
+                aria-label="Publish explorer URL"
+                placeholder="https://..."
+                className="w-full border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-xs text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground)/.34)]"
+              />
+              <TypographicLink
+                onClick={async () => setPublishStatus(await finalizePublishStatus(report, {
+                  txHash: publishTxHash.trim(),
+                  explorerUrl: publishExplorerUrl.trim() || undefined,
+                  publishedAt: new Date().toISOString(),
+                }))}
+              >
+                Mark published on testnet
+              </TypographicLink>
             </div>
           </div>
         </div>
+
         {publishStatus && (
-          <div className="mt-4 border border-[hsl(var(--border))] bg-[hsl(var(--card)/.56)] p-4 text-sm text-[hsl(var(--foreground))]">
-            <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Publish state</div>
-            <div className="mt-2 font-medium">{publishStatus.nextAction}</div>
+          <div className="paper-panel">
+            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Publish state</div>
+            <div className="mt-2 text-sm font-medium text-[hsl(var(--foreground))]">{publishStatus.nextAction}</div>
             <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">
               {publishStatus.status}
               {publishStatus.txHash ? ` / ${publishStatus.txHash}` : ''}
@@ -441,36 +581,62 @@ function ReportView({
         )}
       </section>
 
-      <section className="reveal reveal-delay-2">
-        <div className="mb-4 flex items-end justify-between">
-          <div><div className="font-mono text-[10px] uppercase tracking-[.2em] text-[hsl(var(--secondary))]">Evidence ledger</div><h2 className="mt-2 font-serif text-3xl">Where the language breaks</h2></div>
-          <div className="hidden font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))] sm:block">Quote / qualify / explain</div>
-        </div>
-        <div className="space-y-3">
+      <section className="mt-12">
+        <SectionHeading
+          index="03"
+          title="Evidence ledger"
+          lead="Each finding is split into claim, counter-record, and plain-language explanation. The order alternates so the page keeps moving without becoming a wall of identical cards."
+        />
+        <div className="mt-8 space-y-10">
           {report.findings.map((finding, index) => {
-            const isOpen = openFinding === index;
+            const reversed = index % 2 === 1;
             return (
-              <article key={`${finding.title}-${index}`} data-testid={`card-finding-${index}`} className={`border bg-[hsl(var(--card)/.72)] transition-colors ${isOpen ? 'border-[hsl(var(--secondary)/.55)]' : 'border-[hsl(var(--card-border))]'}`}>
-                <button type="button" onClick={() => setOpenFinding(isOpen ? null : index)} data-testid={`button-toggle-finding-${index}`} className="flex w-full items-center gap-4 p-4 text-left sm:p-5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center bg-[hsl(var(--muted))] font-mono text-xs text-[hsl(var(--muted-foreground))]">0{index + 1}</span>
-                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-[hsl(var(--foreground))] sm:text-base">{finding.title}</span><span className="mt-1 block truncate text-xs text-[hsl(var(--muted-foreground))]">{finding.marketingQuote}</span></span>
-                  <SeverityMark severity={finding.severity} />
-                  <ChevronDown size={17} className={`shrink-0 text-[hsl(var(--muted-foreground))] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isOpen && <div className="grid gap-4 border-t border-[hsl(var(--border))] px-4 pb-5 pt-4 sm:grid-cols-2 sm:px-[4.5rem]">
-                  <div className="border-l-2 border-[hsl(var(--destructive))] pl-4"><div className="font-mono text-[10px] uppercase tracking-[.15em] text-[hsl(var(--destructive))]">Marketing says</div><blockquote className="mt-2 text-sm leading-6 text-[hsl(var(--foreground))]">“{finding.marketingQuote}”</blockquote></div>
-                  <div className="border-l-2 border-[hsl(var(--secondary))] pl-4"><div className="font-mono text-[10px] uppercase tracking-[.15em] text-[hsl(var(--secondary))]">Terms say</div><blockquote className="mt-2 text-sm leading-6 text-[hsl(var(--foreground))]">“{finding.termsQuote}”</blockquote></div>
-                  <div className="sm:col-span-2"><div className="font-mono text-[10px] uppercase tracking-[.15em] text-[hsl(var(--muted-foreground))]">Investigator's read</div><p className="mt-2 max-w-4xl text-sm leading-6 text-[hsl(var(--muted-foreground))]">{finding.explanation}</p><div className="mt-4 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[.12em] text-[hsl(var(--muted-foreground))]"><span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--secondary))]" /> Rule confidence {finding.confidence}%</div></div>
-                </div>}
+              <article
+                key={`${finding.title}-${index}`}
+                data-testid={`card-finding-${index}`}
+                className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+              >
+                <div className={reversed ? 'xl:order-2' : ''}>
+                  <div className="font-mono text-[10px] uppercase tracking-[.2em] text-[hsl(var(--muted-foreground))]">
+                    0{index + 1} · {finding.severity}
+                  </div>
+                  <h3 className="mt-2 font-serif text-3xl leading-[1.02] tracking-tight text-[hsl(var(--foreground))] sm:text-[2.25rem]">
+                    {finding.title}
+                  </h3>
+                  <p className="mt-4 max-w-xl text-sm leading-7 text-[hsl(var(--muted-foreground))]">
+                    {finding.explanation}
+                  </p>
+                  <div className="mt-4">
+                    <SeverityMark severity={finding.severity} />
+                  </div>
+                </div>
+
+                <div className={`grid gap-4 ${reversed ? 'xl:order-1' : ''}`}>
+                  <div className="border-l-2 border-[hsl(var(--destructive))] pl-4">
+                    <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--destructive))]">Marketing says</div>
+                    <blockquote className="mt-2 text-sm leading-7 text-[hsl(var(--foreground))]">“{finding.marketingQuote}”</blockquote>
+                  </div>
+                  <div className="border-l-2 border-[hsl(var(--secondary))] pl-4">
+                    <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--secondary))]">Terms say</div>
+                    <blockquote className="mt-2 text-sm leading-7 text-[hsl(var(--foreground))]">“{finding.termsQuote}”</blockquote>
+                  </div>
+                  <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">
+                    Rule confidence {finding.confidence}%
+                  </div>
+                </div>
               </article>
             );
           })}
         </div>
       </section>
 
-      <div className="mt-10 flex flex-col justify-between gap-4 border-t border-[hsl(var(--border))] pt-6 sm:flex-row sm:items-center">
-        <p className="max-w-xl text-xs leading-5 text-[hsl(var(--muted-foreground))]"><strong className="font-medium text-[hsl(var(--foreground))]">Screening note.</strong> This report is generated by local rules and is intended to focus human review. It is not legal, financial, or investment advice.</p>
-        <button type="button" onClick={onReset} data-testid="button-run-another" className="inline-flex items-center justify-center gap-2 border border-[hsl(var(--primary))] px-4 py-2.5 text-xs font-medium text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))]"><RotateCcw size={14} /> Run another check</button>
+      <div className="mt-12 flex flex-col justify-between gap-4 border-t border-[hsl(var(--border))] pt-6 sm:flex-row sm:items-center">
+        <p className="max-w-xl text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+          <strong className="font-medium text-[hsl(var(--foreground))]">Screening note.</strong> This report is generated by local rules and is intended to focus human review. It is not legal, financial, or investment advice.
+        </p>
+        <button type="button" onClick={onReset} data-testid="button-run-another" className="inline-flex items-center justify-center gap-2 border border-[hsl(var(--primary))] px-4 py-2.5 text-xs font-medium text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))]">
+          <RotateCcw size={14} /> Run another check
+        </button>
       </div>
     </main>
   );
@@ -488,19 +654,19 @@ function RecordsLedger({
   const visibleRecords = records.slice(0, 6);
 
   return (
-    <section className="mx-auto max-w-[1480px] px-5 pb-10 sm:px-8 lg:px-12">
-      <div className="flex flex-col justify-between gap-4 border-t border-[hsl(var(--border))] pt-6 sm:flex-row sm:items-end">
-        <div>
-          <div className="font-mono text-[10px] uppercase tracking-[.2em] text-[hsl(var(--secondary))]">Research ledger</div>
-          <h2 className="mt-2 font-serif text-3xl text-[hsl(var(--foreground))]">Saved records and publication shells</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[hsl(var(--muted-foreground))]">
-            These entries show what the app has saved locally or in PostgreSQL, including the compact hashes prepared for an X Layer publication.
-          </p>
-        </div>
+    <section id="ledger" className="mx-auto max-w-[1480px] px-5 pb-10 sm:px-8 lg:px-12">
+      <SectionHeading
+        index="04"
+        title="Research ledger"
+        lead="These records show what the app saved locally or in PostgreSQL, plus the compact hashes prepared for an X Layer publication."
+      />
+
+      <div className="mt-8 flex items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-4">
+        <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Latest entries first</div>
         <button
           type="button"
           onClick={onRefresh}
-          className="inline-flex items-center justify-center gap-2 border border-[hsl(var(--primary))] px-4 py-2.5 text-xs font-medium text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))]"
+          className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--primary))]"
           data-testid="button-refresh-records"
         >
           {isLoading ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
@@ -509,62 +675,67 @@ function RecordsLedger({
       </div>
 
       {visibleRecords.length === 0 ? (
-        <div className="mt-5 border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--card)/.55)] p-6 text-sm text-[hsl(var(--muted-foreground))]">
+        <div className="mt-5 paper-panel text-sm text-[hsl(var(--muted-foreground))]">
           No saved records yet. Run a check and save it to populate the ledger.
         </div>
       ) : (
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
-          {visibleRecords.map((record) => (
-            <article key={record.id} className="border border-[hsl(var(--card-border))] bg-[hsl(var(--card)/.68)] p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">
-                    {record.provider} / {record.network}
-                  </div>
-                  <h3 className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">
-                    {record.summary}
-                  </h3>
+        <>
+          <div className="mt-5 hidden overflow-hidden border border-[hsl(var(--border))] md:block">
+            <table className="w-full border-collapse">
+              <thead className="bg-[hsl(var(--card)/.82)] text-left font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Session</th>
+                  <th className="px-4 py-3 font-medium">Score</th>
+                  <th className="px-4 py-3 font-medium">Findings</th>
+                  <th className="px-4 py-3 font-medium">Chain</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRecords.map((record) => (
+                  <tr key={record.id} className="border-t border-[hsl(var(--border))] align-top">
+                    <td className="px-4 py-4">
+                      <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">
+                        {record.provider} / {record.network}
+                      </div>
+                      <div className="mt-2 max-w-[34rem] text-sm font-medium text-[hsl(var(--foreground))]">{record.summary}</div>
+                      <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">{record.checkedAt}</div>
+                    </td>
+                    <td className="px-4 py-4 font-serif text-3xl leading-none text-[hsl(var(--foreground))]">{record.score}</td>
+                    <td className="px-4 py-4">
+                      <div className="text-sm text-[hsl(var(--foreground))]">{record.findingsCount} total / {record.highSeverityCount} high</div>
+                      <div className="mt-2 text-xs uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">{record.status}</div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="text-sm text-[hsl(var(--foreground))]">{record.publishedAt ? 'Published' : 'Not published'}</div>
+                      <div className="mt-2 break-all text-xs text-[hsl(var(--muted-foreground))]">{record.txHash ? `${record.txHash.slice(0, 12)}...` : 'No transaction yet'}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:hidden">
+            {visibleRecords.map((record) => (
+              <article key={record.id} className="paper-panel">
+                <div className="font-mono text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">
+                  {record.provider} / {record.network}
                 </div>
-                <div className="text-right">
-                  <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">
-                    Score
+                <div className="mt-2 text-lg font-semibold text-[hsl(var(--foreground))]">{record.summary}</div>
+                <div className="mt-4 grid gap-3">
+                  <div className="border border-[hsl(var(--border))] p-3">
+                    <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Score</div>
+                    <div className="mt-2 font-serif text-3xl leading-none text-[hsl(var(--foreground))]">{record.score}</div>
                   </div>
-                  <div className="mt-1 font-serif text-3xl leading-none text-[hsl(var(--foreground))]">
-                    {record.score}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="border border-[hsl(var(--border))] p-3">
-                  <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Findings</div>
-                  <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
-                    {record.findingsCount} total / {record.highSeverityCount} high
-                  </div>
-                  <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-                    {record.status}
+                  <div className="border border-[hsl(var(--border))] p-3">
+                    <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Findings</div>
+                    <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{record.findingsCount} total / {record.highSeverityCount} high</div>
                   </div>
                 </div>
-                <div className="border border-[hsl(var(--border))] p-3">
-                  <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Chain</div>
-                  <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
-                    {record.publishedAt ? 'Published' : 'Not published'}
-                  </div>
-                  <div className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-                    {record.txHash ? `${record.txHash.slice(0, 12)}...` : 'No transaction yet'}
-                  </div>
-                </div>
-                <div className="border border-[hsl(var(--border))] p-3 sm:col-span-2">
-                  <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Hashes</div>
-                  <div className="mt-2 grid gap-2 text-[11px] font-mono text-[hsl(var(--foreground))]">
-                    <div className="break-all">report {record.reportHash}</div>
-                    <div className="break-all">terms {record.officialTermsHash}</div>
-                    <div className="break-all">marketing {record.publicMarketingHash}</div>
-                  </div>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );
@@ -598,9 +769,16 @@ function Home() {
         {report ? <ReportView report={report} onReset={reset} onRecordSaved={refreshRecords} /> : <Workspace onReport={setReport} />}
       </div>
       <RecordsLedger records={records} isLoading={isLoadingRecords} onRefresh={refreshRecords} />
-      <footer className="mx-auto flex max-w-[1480px] items-center justify-between border-t border-[hsl(var(--border))] px-5 py-5 font-mono text-[9px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))] sm:px-8 lg:px-12">
-        <span>Claims Checker / Open evidence, clearer judgment</span>
-        <span className="hidden sm:inline">Ruleset: local / deterministic</span>
+      <footer className="mx-auto max-w-[1480px] px-5 pb-8 pt-10 sm:px-8 lg:px-12">
+        <div className="border-t border-[hsl(var(--border))] pt-6">
+          <p className="max-w-4xl font-serif text-2xl leading-[1.1] text-[hsl(var(--foreground))] sm:text-3xl">
+            Claims Checker keeps the record visible, the source explicit, and the publication path legible.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 font-mono text-[9px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">
+            <span>Claims Checker · Open evidence, clearer judgment</span>
+            <span className="hidden sm:inline">Ruleset: local / deterministic</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

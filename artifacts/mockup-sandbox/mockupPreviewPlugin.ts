@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import glob from "fast-glob";
 import chokidar from "chokidar";
@@ -91,8 +91,14 @@ export function mockupPreviewPlugin(): Plugin {
       const components = await discoverComponents();
       const newSource = generateSource(components);
       if (newSource !== currentSource) {
-        currentSource = newSource;
         const generatedModuleAbsPath = getGeneratedModuleAbsPath();
+        const onDiskSource = existsSync(generatedModuleAbsPath)
+          ? readFileSync(generatedModuleAbsPath, "utf8")
+          : "";
+        currentSource = newSource;
+        if (newSource === onDiskSource) {
+          return false;
+        }
         mkdirSync(path.dirname(generatedModuleAbsPath), { recursive: true });
         writeFileSync(generatedModuleAbsPath, currentSource);
         changed = true;
