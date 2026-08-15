@@ -213,7 +213,7 @@ function Workspace({ onReport }: { onReport: (report: Report) => void }) {
 
       <div className="mt-9 grid gap-4 border-y border-[hsl(var(--border))] py-5 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
         <div className="flex gap-3"><ShieldCheck className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">Evidence-led</strong><br />Every flag includes the language behind it.</span></div>
-        <div className="flex gap-3"><Fingerprint className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">Local by default</strong><br />No provider, API key, or upload required.</span></div>
+        <div className="flex gap-3"><Fingerprint className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">AI when configured</strong><br />OpenAI-compatible analysis when keys are present, with local fallback if not.</span></div>
         <div className="flex gap-3"><Info className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">Not legal advice</strong><br />A screening layer for human investigators.</span></div>
       </div>
     </main>
@@ -226,6 +226,29 @@ function SeverityMark({ severity }: { severity: Severity }) {
     : severity === 'medium'
       ? <span className="inline-flex items-center gap-1.5 border border-[hsl(28_67%_51%/.35)] bg-[hsl(28_67%_51%/.1)] px-2 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-[hsl(28_67%_42%)]"><TriangleAlert size={12} /> Review</span>
       : <span className="inline-flex items-center gap-1.5 border border-[hsl(var(--secondary)/.3)] bg-[hsl(var(--secondary)/.1)] px-2 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-[hsl(var(--secondary))]"><Check size={12} /> Low</span>;
+}
+
+function AnalysisProviderBadge({ provider }: { provider: string }) {
+  const normalized = provider.toLowerCase();
+  const styles =
+    normalized === 'ai'
+      ? 'border-[hsl(142_71%_45%/.28)] bg-[hsl(142_71%_45%/.1)] text-[hsl(142_71%_28%)]'
+      : normalized === 'fallback'
+        ? 'border-[hsl(28_67%_51%/.28)] bg-[hsl(28_67%_51%/.1)] text-[hsl(28_67%_35%)]'
+        : 'border-[hsl(var(--secondary)/.28)] bg-[hsl(var(--secondary)/.1)] text-[hsl(var(--secondary))]';
+
+  const label = normalized === 'ai'
+    ? 'AI analysis'
+    : normalized === 'fallback'
+      ? 'Local fallback'
+      : 'Local rules';
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[10px] uppercase tracking-[.12em] ${styles}`}>
+      <Sparkles size={12} />
+      {label}
+    </span>
+  );
 }
 
 function ReportView({
@@ -261,6 +284,7 @@ function ReportView({
         </div>
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
           <div data-testid="status-report" className="flex items-center gap-2 border border-[hsl(var(--destructive)/.35)] bg-[hsl(var(--destructive)/.08)] px-3 py-2 font-mono text-[11px] uppercase tracking-[.14em] text-[hsl(var(--destructive))]"><span className="h-1.5 w-1.5 rounded-full bg-current" />{report.status === 'flagged' ? 'Review required' : 'No flags found'}</div>
+          {report.provenance && <AnalysisProviderBadge provider={report.provenance.provider} />}
           <span className="font-mono text-[10px] text-[hsl(var(--muted-foreground))]">Checked {checkedAt}</span>
         </div>
       </section>
