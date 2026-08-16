@@ -13,12 +13,14 @@ import {
   finalizePublishStatus,
   getDefaultSourceMetadata,
   getXLayerSetup,
+  getXLayerReadiness,
   listRecords,
   preparePublication,
   preparePublishStatus,
   saveReport,
   screenClaims,
   type AnalysisRecord,
+  type XLayerReadiness,
   type XLayerSetup,
 } from '@/lib/analysis-api';
 
@@ -161,7 +163,13 @@ function TypographicLink({
   );
 }
 
-function XLayerSetupPanel({ setup }: { setup: XLayerSetup }) {
+function XLayerSetupPanel({
+  setup,
+  readiness,
+}: {
+  setup: XLayerSetup;
+  readiness: XLayerReadiness | null;
+}) {
   const testnet = setup.networks["xlayer-testnet"];
   const mainnet = setup.networks["xlayer-mainnet"];
 
@@ -197,6 +205,15 @@ function XLayerSetupPanel({ setup }: { setup: XLayerSetup }) {
             Open faucet
           </a>
         </div>
+        <div className="flex items-center justify-between gap-3">
+          <span>Readiness</span>
+          <span className={`font-mono ${readiness?.ready ? 'text-[hsl(var(--secondary))]' : 'text-[hsl(var(--destructive))]'}`}>
+            {readiness?.ready ? 'Ready' : 'Waiting'}
+          </span>
+        </div>
+        <div className="text-[11px] leading-6 text-[hsl(var(--muted-foreground))]">
+          {readiness?.nextStep ?? 'Loading readiness details…'}
+        </div>
       </div>
     </div>
   );
@@ -205,9 +222,11 @@ function XLayerSetupPanel({ setup }: { setup: XLayerSetup }) {
 function Workspace({
   onReport,
   xLayerSetup,
+  xLayerReadiness,
 }: {
   onReport: (report: Report) => void;
   xLayerSetup: XLayerSetup | null;
+  xLayerReadiness: XLayerReadiness | null;
 }) {
   const defaultSourceMetadata = useMemo(() => getDefaultSourceMetadata(), []);
   const [legalTerms, setLegalTerms] = useState('');
@@ -268,7 +287,7 @@ function Workspace({
             <div className="mt-1 text-xs leading-6 text-[hsl(var(--muted-foreground))] break-all">{sourceUrl || 'No source URL recorded yet'}</div>
           </div>
           {xLayerSetup ? (
-            <XLayerSetupPanel setup={xLayerSetup} />
+            <XLayerSetupPanel setup={xLayerSetup} readiness={xLayerReadiness} />
           ) : (
             <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4">
               <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">X Layer setup</div>
@@ -417,11 +436,13 @@ function ReportView({
   onReset,
   onRecordSaved,
   xLayerSetup,
+  xLayerReadiness,
 }: {
   report: Report;
   onReset: () => void;
   onRecordSaved: () => Promise<void>;
   xLayerSetup: XLayerSetup | null;
+  xLayerReadiness: XLayerReadiness | null;
 }) {
   const [openFinding, setOpenFinding] = useState<number | null>(0);
   const [showMethod, setShowMethod] = useState(false);
@@ -691,7 +712,7 @@ function ReportView({
             </div>
             <div className="mt-4">
               {xLayerSetup ? (
-                <XLayerSetupPanel setup={xLayerSetup} />
+                <XLayerSetupPanel setup={xLayerSetup} readiness={xLayerReadiness} />
               ) : (
                 <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
                   Loading X Layer details…
@@ -877,6 +898,7 @@ function Home() {
   const [report, setReport] = useState<Report | null>(null);
   const [records, setRecords] = useState<AnalysisRecord[]>([]);
   const [xLayerSetup, setXLayerSetup] = useState<XLayerSetup | null>(null);
+  const [xLayerReadiness, setXLayerReadiness] = useState<XLayerReadiness | null>(null);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const reset = () => setReport(null);
 
@@ -899,9 +921,18 @@ function Home() {
     }
   };
 
+  const refreshXLayerReadiness = async () => {
+    try {
+      setXLayerReadiness(await getXLayerReadiness());
+    } catch (error) {
+      console.warn("Unable to load X Layer readiness", error);
+    }
+  };
+
   useEffect(() => {
     void refreshRecords();
     void refreshXLayerSetup();
+    void refreshXLayerReadiness();
   }, []);
 
   return (
@@ -914,9 +945,14 @@ function Home() {
             onReset={reset}
             onRecordSaved={refreshRecords}
             xLayerSetup={xLayerSetup}
+            xLayerReadiness={xLayerReadiness}
           />
         ) : (
-          <Workspace onReport={setReport} xLayerSetup={xLayerSetup} />
+          <Workspace
+            onReport={setReport}
+            xLayerSetup={xLayerSetup}
+            xLayerReadiness={xLayerReadiness}
+          />
         )}
       </div>
       <RecordsLedger records={records} isLoading={isLoadingRecords} onRefresh={refreshRecords} />

@@ -30,6 +30,12 @@ export type XLayerSetup = {
   networks: Record<"xlayer-testnet" | "xlayer-mainnet", XLayerNetworkConfig>;
 };
 
+export type XLayerReadiness = {
+  ready: boolean;
+  missing: Array<"walletAddress" | "contractAddress">;
+  nextStep: string;
+};
+
 export type AnalysisRecord = {
   id: number;
   checkedAt: string;
@@ -105,6 +111,35 @@ export async function getXLayerSetup(): Promise<XLayerSetup> {
           explorerUrl: "https://www.okx.com/web3/explorer/xlayer",
         },
       },
+    };
+  }
+}
+
+export async function getXLayerReadiness(): Promise<XLayerReadiness> {
+  try {
+    const response = await fetch(`${API_BASE}/xlayer/readiness`);
+
+    if (!response.ok) {
+      throw new Error(`X Layer readiness API returned ${response.status}`);
+    }
+
+    const payload = (await response.json()) as {
+      status?: string;
+      readiness?: XLayerReadiness;
+    };
+
+    if (!payload.readiness) {
+      throw new Error("X Layer readiness payload missing");
+    }
+
+    return payload.readiness;
+  } catch (error) {
+    console.warn("Falling back to local X Layer readiness", error);
+    return {
+      ready: false,
+      missing: ["walletAddress", "contractAddress"],
+      nextStep:
+        "Add a deployed contract address, then copy the payload JSON into the wallet flow.",
     };
   }
 }

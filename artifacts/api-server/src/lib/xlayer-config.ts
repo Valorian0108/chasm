@@ -61,6 +61,12 @@ export const xLayerConfig = {
   networks: xLayerNetworks,
 };
 
+export type XLayerReadiness = {
+  ready: boolean;
+  missing: Array<"walletAddress" | "contractAddress">;
+  nextStep: string;
+};
+
 export function getXLayerNetworkConfig(
   network: XLayerNetworkName = xLayerConfig.targetNetwork,
 ): XLayerNetworkConfig {
@@ -71,4 +77,30 @@ export function getXLayerNetworkLabel(
   network: XLayerNetworkName = xLayerConfig.targetNetwork,
 ): string {
   return network === "xlayer-mainnet" ? "X Layer mainnet" : "X Layer testnet";
+}
+
+function isEvmAddress(value: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(value.trim());
+}
+
+export function getXLayerReadiness(): XLayerReadiness {
+  const missing: Array<"walletAddress" | "contractAddress"> = [];
+
+  if (!isEvmAddress(xLayerConfig.walletAddress)) {
+    missing.push("walletAddress");
+  }
+
+  if (!isEvmAddress(xLayerConfig.contractAddress)) {
+    missing.push("contractAddress");
+  }
+
+  const ready = missing.length === 0;
+
+  return {
+    ready,
+    missing,
+    nextStep: ready
+      ? "Testnet publish is ready."
+      : "Add a deployed contract address, then copy the payload JSON into the wallet flow.",
+  };
 }
