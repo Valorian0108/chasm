@@ -6,6 +6,7 @@ import { buildPublicationChecklist, buildXLayerPublication, type Finding, type A
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { toast } from '@/hooks/use-toast';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import {
@@ -435,6 +436,23 @@ function ReportView({
     () => buildPublicationChecklist(report, publication),
     [report, publication],
   );
+  const xLayerPayload = publication ?? publishStatus?.payload ?? null;
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: `${label} copied`,
+        description: "Ready to paste into your testnet workflow.",
+      });
+    } catch (error) {
+      console.warn("Unable to copy text", error);
+      toast({
+        title: `Couldn't copy ${label.toLowerCase()}`,
+        description: "Your browser may have blocked clipboard access.",
+      });
+    }
+  };
 
   return (
     <main id="report" className="mx-auto max-w-[1480px] px-5 pb-20 pt-10 sm:px-8 lg:px-12 lg:pt-14">
@@ -603,6 +621,42 @@ function ReportView({
                   {publishStatus?.payload.timestamp ?? publication?.timestamp ?? 'Timestamp pending'}
                 </div>
               </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!xLayerPayload) {
+                    toast({
+                      title: "Nothing to copy yet",
+                      description: "Prepare the X Layer payload first.",
+                    });
+                    return;
+                  }
+
+                  await copyText(JSON.stringify(xLayerPayload, null, 2), "X Layer payload");
+                }}
+                className="inline-flex items-center justify-center gap-2 border border-[hsl(var(--primary))] px-4 py-2 text-xs font-medium text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))]"
+              >
+                Copy payload JSON
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!xLayerSetup) {
+                    toast({
+                      title: "X Layer setup still loading",
+                      description: "Try again in a moment.",
+                    });
+                    return;
+                  }
+
+                  await copyText(JSON.stringify(xLayerSetup, null, 2), "X Layer setup");
+                }}
+                className="inline-flex items-center justify-center gap-2 border border-[hsl(var(--border))] px-4 py-2 text-xs font-medium text-[hsl(var(--foreground))] transition-colors hover:border-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]"
+              >
+                Copy setup JSON
+              </button>
             </div>
           </div>
 
