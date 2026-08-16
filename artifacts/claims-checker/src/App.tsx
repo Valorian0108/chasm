@@ -8,7 +8,18 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
-import { finalizePublishStatus, getDefaultSourceMetadata, listRecords, preparePublication, preparePublishStatus, saveReport, screenClaims, type AnalysisRecord } from '@/lib/analysis-api';
+import {
+  finalizePublishStatus,
+  getDefaultSourceMetadata,
+  getXLayerSetup,
+  listRecords,
+  preparePublication,
+  preparePublishStatus,
+  saveReport,
+  screenClaims,
+  type AnalysisRecord,
+  type XLayerSetup,
+} from '@/lib/analysis-api';
 
 const queryClient = new QueryClient();
 
@@ -149,7 +160,54 @@ function TypographicLink({
   );
 }
 
-function Workspace({ onReport }: { onReport: (report: Report) => void }) {
+function XLayerSetupPanel({ setup }: { setup: XLayerSetup }) {
+  const testnet = setup.networks["xlayer-testnet"];
+  const mainnet = setup.networks["xlayer-mainnet"];
+
+  return (
+    <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4">
+      <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">X Layer setup</div>
+      <div className="mt-2 text-sm text-[hsl(var(--foreground))]">
+        {setup.targetNetwork === "xlayer-mainnet" ? "Mainnet target" : "Testnet target"}
+      </div>
+      <div className="mt-1 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+        Wallet: <span className="break-all">{setup.walletAddress || "Add your wallet address in .env.local"}</span>
+      </div>
+      <div className="mt-1 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+        Contract: <span className="break-all">{setup.contractAddress || "Not deployed yet"}</span>
+      </div>
+      <div className="mt-3 grid gap-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+        <div className="flex items-center justify-between gap-3">
+          <span>Testnet chain</span>
+          <span className="font-mono text-[hsl(var(--foreground))]">{testnet.chainId}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span>Mainnet chain</span>
+          <span className="font-mono text-[hsl(var(--foreground))]">{mainnet.chainId}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span>Faucet</span>
+          <a
+            href={setup.faucetUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="truncate text-[hsl(var(--primary))] underline decoration-[hsl(var(--primary)/.25)] underline-offset-4"
+          >
+            Open faucet
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Workspace({
+  onReport,
+  xLayerSetup,
+}: {
+  onReport: (report: Report) => void;
+  xLayerSetup: XLayerSetup | null;
+}) {
   const defaultSourceMetadata = useMemo(() => getDefaultSourceMetadata(), []);
   const [legalTerms, setLegalTerms] = useState('');
   const [marketingCopy, setMarketingCopy] = useState('');
@@ -208,6 +266,15 @@ function Workspace({ onReport }: { onReport: (report: Report) => void }) {
             <div className="mt-2 text-sm text-[hsl(var(--foreground))]">{sourceLabel}</div>
             <div className="mt-1 text-xs leading-6 text-[hsl(var(--muted-foreground))] break-all">{sourceUrl || 'No source URL recorded yet'}</div>
           </div>
+          {xLayerSetup ? (
+            <XLayerSetupPanel setup={xLayerSetup} />
+          ) : (
+            <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4">
+              <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">X Layer setup</div>
+              <div className="mt-2 text-sm text-[hsl(var(--foreground))]">Loading network details…</div>
+              <div className="mt-1 text-xs leading-6 text-[hsl(var(--muted-foreground))]">The app will show your testnet wallet and contract slot here.</div>
+            </div>
+          )}
         </aside>
       </section>
 
@@ -348,10 +415,12 @@ function ReportView({
   report,
   onReset,
   onRecordSaved,
+  xLayerSetup,
 }: {
   report: Report;
   onReset: () => void;
   onRecordSaved: () => Promise<void>;
+  xLayerSetup: XLayerSetup | null;
 }) {
   const [openFinding, setOpenFinding] = useState<number | null>(0);
   const [showMethod, setShowMethod] = useState(false);
@@ -566,6 +635,15 @@ function ReportView({
                 Mark published on testnet
               </TypographicLink>
             </div>
+            <div className="mt-4">
+              {xLayerSetup ? (
+                <XLayerSetupPanel setup={xLayerSetup} />
+              ) : (
+                <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+                  Loading X Layer details…
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -744,6 +822,7 @@ function RecordsLedger({
 function Home() {
   const [report, setReport] = useState<Report | null>(null);
   const [records, setRecords] = useState<AnalysisRecord[]>([]);
+  const [xLayerSetup, setXLayerSetup] = useState<XLayerSetup | null>(null);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const reset = () => setReport(null);
 
@@ -758,15 +837,33 @@ function Home() {
     }
   };
 
+  const refreshXLayerSetup = async () => {
+    try {
+      setXLayerSetup(await getXLayerSetup());
+    } catch (error) {
+      console.warn("Unable to load X Layer setup", error);
+    }
+  };
+
   useEffect(() => {
     void refreshRecords();
+    void refreshXLayerSetup();
   }, []);
 
   return (
     <div className="noise claims-shell min-h-[100dvh]">
       <Header onReset={reset} />
       <div className="relative">
-        {report ? <ReportView report={report} onReset={reset} onRecordSaved={refreshRecords} /> : <Workspace onReport={setReport} />}
+        {report ? (
+          <ReportView
+            report={report}
+            onReset={reset}
+            onRecordSaved={refreshRecords}
+            xLayerSetup={xLayerSetup}
+          />
+        ) : (
+          <Workspace onReport={setReport} xLayerSetup={xLayerSetup} />
+        )}
       </div>
       <RecordsLedger records={records} isLoading={isLoadingRecords} onRefresh={refreshRecords} />
       <footer className="mx-auto max-w-[1480px] px-5 pb-8 pt-10 sm:px-8 lg:px-12">

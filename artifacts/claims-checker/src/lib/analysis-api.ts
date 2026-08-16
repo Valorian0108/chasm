@@ -15,6 +15,21 @@ import {
 const API_BASE = "/api";
 const STORAGE_KEY = "claims-checker.records";
 
+export type XLayerNetworkConfig = {
+  name: "xlayer-testnet" | "xlayer-mainnet";
+  chainId: number;
+  rpcUrl: string;
+  explorerUrl: string;
+};
+
+export type XLayerSetup = {
+  targetNetwork: "xlayer-testnet" | "xlayer-mainnet";
+  walletAddress: string;
+  contractAddress: string;
+  faucetUrl: string;
+  networks: Record<"xlayer-testnet" | "xlayer-mainnet", XLayerNetworkConfig>;
+};
+
 export type AnalysisRecord = {
   id: number;
   checkedAt: string;
@@ -49,6 +64,49 @@ export function getDefaultSourceMetadata() {
     sourceLabel: `${window.location.hostname || "Browser"} screening session`,
     sourceUrl: window.location.origin,
   };
+}
+
+export async function getXLayerSetup(): Promise<XLayerSetup> {
+  try {
+    const response = await fetch(`${API_BASE}/xlayer/config`);
+
+    if (!response.ok) {
+      throw new Error(`X Layer config API returned ${response.status}`);
+    }
+
+    const payload = (await response.json()) as {
+      status?: string;
+      xLayer?: XLayerSetup;
+    };
+
+    if (!payload.xLayer) {
+      throw new Error("X Layer config payload missing");
+    }
+
+    return payload.xLayer;
+  } catch (error) {
+    console.warn("Falling back to local X Layer setup", error);
+    return {
+      targetNetwork: "xlayer-testnet",
+      walletAddress: "",
+      contractAddress: "",
+      faucetUrl: "https://www.okx.com/xlayer/faucet",
+      networks: {
+        "xlayer-testnet": {
+          name: "xlayer-testnet",
+          chainId: 1952,
+          rpcUrl: "https://testrpc.xlayer.tech/terigon",
+          explorerUrl: "https://www.okx.com/web3/explorer/xlayer-test",
+        },
+        "xlayer-mainnet": {
+          name: "xlayer-mainnet",
+          chainId: 196,
+          rpcUrl: "https://rpc.xlayer.tech",
+          explorerUrl: "https://www.okx.com/web3/explorer/xlayer",
+        },
+      },
+    };
+  }
 }
 
 export async function screenClaims(
