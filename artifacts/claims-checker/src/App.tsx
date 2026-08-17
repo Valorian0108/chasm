@@ -270,11 +270,27 @@ function Workspace({
   return (
     <main id="sources" className="mx-auto max-w-[1480px] px-5 pb-20 pt-10 sm:px-8 lg:px-12 lg:pt-14">
       <section className="grid gap-8 border-b border-[hsl(var(--border))] pb-10 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
-        <SectionHeading
-          index="01"
-          title="Source dossier"
-          lead="Paste the terms and the public copy. The app holds both versions in view so the comparison feels like reading a file, not filling a form."
-        />
+        <div className="grid gap-5">
+          <SectionHeading
+            index="01"
+            title="Source dossier"
+            lead="Paste the terms and the public copy. The app holds both versions in view so the comparison feels like reading a file, not filling a form."
+          />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="border border-[hsl(var(--border))] px-4 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Step 1</div>
+              <div className="mt-2 text-sm text-[hsl(var(--foreground))]">Paste official terms</div>
+            </div>
+            <div className="border border-[hsl(var(--border))] px-4 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Step 2</div>
+              <div className="mt-2 text-sm text-[hsl(var(--foreground))]">Paste public marketing</div>
+            </div>
+            <div className="border border-[hsl(var(--border))] px-4 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Step 3</div>
+              <div className="mt-2 text-sm text-[hsl(var(--foreground))]">Run the check and review the evidence</div>
+            </div>
+          </div>
+        </div>
 
         <aside className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
           <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4">
