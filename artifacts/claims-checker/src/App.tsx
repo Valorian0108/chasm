@@ -302,6 +302,9 @@ function Workspace({
       <section className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <article className="paper-panel">
           <FieldLabel index="01" count={legalTerms.length}>Official terms</FieldLabel>
+          <p className="mb-3 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+            Paste the source text: terms, disclosures, docs, or risk notes. This is the side the app treats as the rulebook.
+          </p>
           <textarea
             value={legalTerms}
             onChange={(event) => setLegalTerms(event.target.value)}
@@ -318,6 +321,9 @@ function Workspace({
 
         <article className="paper-panel">
           <FieldLabel index="02" count={marketingCopy.length}>Public marketing</FieldLabel>
+          <p className="mb-3 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+            Paste the public message: tweet, landing page, ad copy, pitch deck, or promo text. This is the side the app checks for overpromises.
+          </p>
           <textarea
             value={marketingCopy}
             onChange={(event) => setMarketingCopy(event.target.value)}
@@ -365,6 +371,9 @@ function Workspace({
               {error}
             </div>
           )}
+          <div className="mt-4 border-t border-[hsl(var(--border))] pt-3 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+            Top box = official terms and disclosures. Bottom box = public marketing. If the result looks backward, check whether the texts were swapped.
+          </div>
         </article>
 
         <aside className="paper-panel flex flex-col justify-between">
@@ -612,7 +621,7 @@ function ReportView({
           </div>
           {showMethod && (
             <p className="mt-5 border-t border-[hsl(var(--border))] pt-4 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
-              The local ruleset looks for absolute certainty, return promises, protection language, and hands-off framing. It does not determine truth or replace counsel.
+              The checker looks for absolute certainty, return promises, protection language, and hands-off framing. It does not determine truth or replace counsel.
             </p>
           )}
           {saveStatus !== 'idle' && (
@@ -867,7 +876,7 @@ function RecordsLedger({
       <SectionHeading
         index="04"
         title="Research ledger"
-        lead="These records show what the app saved locally or in PostgreSQL, plus the compact hashes prepared for an X Layer publication."
+        lead="These records show what the app saved locally or in PostgreSQL, plus the compact fingerprints prepared for an X Layer publication."
       />
 
       <div className="mt-8 flex items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-4">

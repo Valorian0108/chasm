@@ -241,18 +241,18 @@ export function analyzeClaims(
 
   if (!findings.length && legal && marketing) {
     findings.push({
-      title: "No direct contradiction detected",
+      title: "No strong mismatch found",
       severity: "low",
       marketingQuote: publicMarketing.trim().split(/\n+/)[0].slice(0, 160),
       termsQuote: officialTerms.trim().split(/\n+/)[0].slice(0, 160),
       explanation:
-        "The local rules did not find a strong mismatch between the language provided. This is a screening result, not a legal opinion; review nuanced or implied claims manually.",
+        "The checker did not find a strong mismatch between the two boxes. This is a screening result, not a final verdict; review nuanced or implied claims manually.",
       confidence: 63,
     });
   }
 
   const score =
-    findings[0]?.title === "No direct contradiction detected"
+    findings[0]?.title === "No strong mismatch found"
       ? 86
       : Math.max(
           18,
@@ -287,8 +287,8 @@ export function analyzeClaims(
     summary:
       highCount > 0
         ? `${highCount} high-severity promise${highCount === 1 ? "" : "s"} conflict with or exceed the supplied terms.`
-        : findings[0]?.title === "No direct contradiction detected"
-          ? "No direct contradiction detected by the local screening rules."
+        : findings[0]?.title === "No strong mismatch found"
+          ? "No strong mismatch found by the local screening rules."
           : "Potentially unsupported language was found and should be reviewed.",
     findings,
   };
