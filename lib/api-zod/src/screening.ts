@@ -127,6 +127,17 @@ const demoFindings: Finding[] = [
   },
 ];
 
+const guaranteedReturnFinding: Finding = {
+  title: "Guaranteed return language conflicts with risk disclosures",
+  severity: "high",
+  marketingQuote: "Earn guaranteed passive income with zero risk.",
+  termsQuote:
+    "Rewards are variable and not guaranteed. Users may lose funds due to market risk.",
+  explanation:
+    "The marketing promises certainty and safety, while the terms say rewards can vary, are not guaranteed, and users may lose funds.",
+  confidence: 97,
+};
+
 export function findSentence(text: string, pattern: RegExp) {
   return text
     .split(/(?<=[.!?])\s+|\n+/)
@@ -145,6 +156,28 @@ export function analyzeClaims(
   const addIf = (condition: boolean, finding: Finding) => {
     if (condition) findings.push(finding);
   };
+
+  addIf(
+    /guaranteed|guarantee|zero risk|no risk|risk-free|safe passive|passive income|fixed return|fixed yield/.test(
+      marketing,
+    ) &&
+      /not guaranteed|variable|may lose|lose funds|market risk|risk|not insured|not protected/.test(
+        legal,
+      ),
+    {
+      ...guaranteedReturnFinding,
+      marketingQuote:
+        findSentence(
+          publicMarketing,
+          /guaranteed|guarantee|zero risk|no risk|risk-free|safe passive|passive income|fixed return|fixed yield/i,
+        ) || guaranteedReturnFinding.marketingQuote,
+      termsQuote:
+        findSentence(
+          officialTerms,
+          /not guaranteed|variable|may lose|lose funds|market risk|risk|not insured|not protected/i,
+        ) || guaranteedReturnFinding.termsQuote,
+    },
+  );
 
   addIf(
     /backed .*1:1|own a piece|ownership|shareholder|real shares/.test(

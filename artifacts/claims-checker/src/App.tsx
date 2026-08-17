@@ -92,7 +92,7 @@ function Header({ onReset }: { onReset: () => void }) {
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[hsl(var(--border))] pt-4 font-mono text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--muted-foreground))]">
           <span>Editorial / Split studio / Newsprint</span>
-          <span>AI when configured, local fallback if needed</span>
+          <span>AI screening, browser rules as backup</span>
         </div>
       </div>
     </header>
@@ -259,7 +259,7 @@ function Workspace({
         onReport(await screenClaims(legalTerms, marketingCopy, {
           sourceLabel,
           sourceUrl: sourceUrl.trim() || undefined,
-          targetNetwork: 'local',
+          targetNetwork: xLayerSetup?.targetNetwork ?? 'xlayer-testnet',
         }));
       } finally {
         setIsChecking(false);
@@ -279,8 +279,8 @@ function Workspace({
         <aside className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
           <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4">
             <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Analysis mode</div>
-            <div className="mt-2 text-sm text-[hsl(var(--foreground))]">AI first, local fallback ready</div>
-            <div className="mt-1 text-xs leading-6 text-[hsl(var(--muted-foreground))]">The report shows which provider answered, so judges can see the actual route used.</div>
+            <div className="mt-2 text-sm text-[hsl(var(--foreground))]">AI first, browser rules as backup</div>
+            <div className="mt-1 text-xs leading-6 text-[hsl(var(--muted-foreground))]">The report says whether AI or the built-in checker produced the result.</div>
           </div>
           <div className="rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.74)] p-4">
             <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Current source</div>
@@ -394,7 +394,7 @@ function Workspace({
 
       <section className="mt-10 grid gap-4 border-y border-[hsl(var(--border))] py-5 text-xs text-[hsl(var(--muted-foreground))] sm:grid-cols-3">
         <div className="flex gap-3"><ShieldCheck className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">Evidence-led</strong><br />Every flag includes the language behind it.</span></div>
-        <div className="flex gap-3"><Fingerprint className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">AI when configured</strong><br />OpenAI-compatible analysis when keys are present, with local fallback if not.</span></div>
+        <div className="flex gap-3"><Fingerprint className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">AI or browser rules</strong><br />AI runs when configured; otherwise the built-in checker keeps the demo working.</span></div>
         <div className="flex gap-3"><Info className="shrink-0 text-[hsl(var(--secondary))]" size={17} /><span><strong className="font-medium text-[hsl(var(--foreground))]">Not legal advice</strong><br />A screening layer for human investigators.</span></div>
       </section>
     </main>
@@ -421,7 +421,7 @@ function AnalysisProviderBadge({ provider }: { provider: string }) {
   const label = normalized === 'ai'
     ? 'AI analysis'
     : normalized === 'fallback'
-      ? 'Local fallback'
+      ? 'Browser rules'
       : 'Local rules';
 
   return (
@@ -587,12 +587,12 @@ function ReportView({
             <TypographicLink
               onClick={async () => setPublication(await preparePublication(report))}
             >
-              Prepare X Layer payload
+              Prepare proof package
             </TypographicLink>
             <TypographicLink
               onClick={async () => setPublishStatus(await preparePublishStatus(report))}
             >
-              Prepare publish status
+              Check publish readiness
             </TypographicLink>
             <TypographicLink
               onClick={async () => {
@@ -623,26 +623,26 @@ function ReportView({
         </article>
 
         <aside className="paper-panel">
-          <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Publication shell</div>
-          <div className="mt-4 grid gap-3 text-sm">
+          <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Screening method</div>
+            <div className="mt-4 grid gap-3 text-sm">
             <div className="flex items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-3">
-              <span className="text-[hsl(var(--muted-foreground))]">Analysis mode</span>
-              <span className="font-medium text-[hsl(var(--foreground))]">
-                {report.provenance?.provider?.toUpperCase() ?? 'LOCAL'}
-              </span>
+              <span className="text-[hsl(var(--muted-foreground))]">Screening engine</span>
+              <AnalysisProviderBadge provider={report.provenance?.provider ?? 'local'} />
             </div>
             <div className="flex items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-3">
-              <span className="text-[hsl(var(--muted-foreground))]">Network</span>
-              <span className="font-medium text-[hsl(var(--foreground))]">{report.provenance?.network ?? 'local'}</span>
+              <span className="text-[hsl(var(--muted-foreground))]">Target chain</span>
+              <span className="font-medium text-[hsl(var(--foreground))]">
+                {(report.provenance?.network ?? 'xlayer-testnet') === 'xlayer-testnet' ? 'X Layer Testnet' : report.provenance?.network}
+              </span>
             </div>
             <div className="flex items-center justify-between gap-4 border-b border-[hsl(var(--border))] pb-3">
               <span className="text-[hsl(var(--muted-foreground))]">Source</span>
               <span className="max-w-[14rem] truncate font-medium text-[hsl(var(--foreground))]">{report.provenance?.sourceLabel ?? 'Browser session'}</span>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <span className="text-[hsl(var(--muted-foreground))]">Receipt</span>
+              <span className="text-[hsl(var(--muted-foreground))]">Onchain status</span>
               <span className="font-mono text-[11px] text-[hsl(var(--foreground))]">
-                {publishStatus?.status === 'published' ? 'published' : publishStatus?.status ?? 'pending'}
+                {publishStatus?.status === 'published' ? 'published' : publishStatus?.status === 'ready' ? 'ready to publish' : 'not published yet'}
               </span>
             </div>
           </div>
@@ -652,26 +652,26 @@ function ReportView({
       <section className="mt-10 grid gap-8">
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,.7fr)]">
           <div className="paper-panel">
-            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">X Layer payload</div>
+            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Onchain proof package</div>
             <div className="mt-3 text-sm leading-6 text-[hsl(var(--foreground))]">
               {publishStatus?.status === 'published'
-                ? 'Published on testnet'
+                ? 'Report fingerprint published on X Layer testnet'
                 : publishStatus?.status === 'ready'
-                  ? 'Ready for testnet signing'
-                  : 'Payload not prepared yet'}
+                  ? 'Ready for wallet signature'
+                  : 'Click Prepare proof package or Publish with wallet to create the fingerprints.'}
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <div className="border border-[hsl(var(--border))] p-3">
-                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Report hash</div>
-                <div className="mt-2 break-all font-mono text-[11px] text-[hsl(var(--foreground))]">{publishStatus?.payload.reportHash ?? publication?.reportHash ?? 'Pending payload'}</div>
+                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Report fingerprint</div>
+                <div className="mt-2 break-all font-mono text-[11px] text-[hsl(var(--foreground))]">{publishStatus?.payload.reportHash ?? publication?.reportHash ?? 'Not created yet'}</div>
               </div>
               <div className="border border-[hsl(var(--border))] p-3">
-                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Terms hash</div>
-                <div className="mt-2 break-all font-mono text-[11px] text-[hsl(var(--foreground))]">{publishStatus?.payload.officialTermsHash ?? publication?.officialTermsHash ?? 'Pending payload'}</div>
+                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Terms fingerprint</div>
+                <div className="mt-2 break-all font-mono text-[11px] text-[hsl(var(--foreground))]">{publishStatus?.payload.officialTermsHash ?? publication?.officialTermsHash ?? 'Not created yet'}</div>
               </div>
               <div className="border border-[hsl(var(--border))] p-3">
-                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Marketing hash</div>
-                <div className="mt-2 break-all font-mono text-[11px] text-[hsl(var(--foreground))]">{publishStatus?.payload.publicMarketingHash ?? publication?.publicMarketingHash ?? 'Pending payload'}</div>
+                <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Marketing fingerprint</div>
+                <div className="mt-2 break-all font-mono text-[11px] text-[hsl(var(--foreground))]">{publishStatus?.payload.publicMarketingHash ?? publication?.publicMarketingHash ?? 'Not created yet'}</div>
               </div>
               <div className="border border-[hsl(var(--border))] p-3">
                 <div className="font-mono text-[10px] uppercase tracking-[.14em] text-[hsl(var(--muted-foreground))]">Findings</div>
@@ -680,7 +680,7 @@ function ReportView({
                     ? `${publishStatus.payload.findingsCount} total / ${publishStatus.payload.highSeverityCount} high`
                     : publication
                       ? `${publication.findingsCount} total / ${publication.highSeverityCount} high`
-                      : 'Awaiting payload'}
+                      : 'Awaiting proof'}
                 </div>
                 <div className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">
                   {publishStatus?.payload.timestamp ?? publication?.timestamp ?? 'Timestamp pending'}
@@ -694,16 +694,16 @@ function ReportView({
                   if (!xLayerPayload) {
                     toast({
                       title: "Nothing to copy yet",
-                      description: "Prepare the X Layer payload first.",
+                      description: "Prepare the proof package first.",
                     });
                     return;
                   }
 
-                  await copyText(JSON.stringify(xLayerPayload, null, 2), "X Layer payload");
+                  await copyText(JSON.stringify(xLayerPayload, null, 2), "proof package");
                 }}
                 className="inline-flex items-center justify-center gap-2 border border-[hsl(var(--primary))] px-4 py-2 text-xs font-medium text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))]"
               >
-                Copy payload JSON
+                Copy proof JSON
               </button>
               <button
                 type="button"
@@ -726,7 +726,10 @@ function ReportView({
           </div>
 
           <div className="paper-panel">
-            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Receipt</div>
+            <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Publish proof</div>
+            <p className="mt-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+              This sends only fingerprints to X Layer, not the full pasted text. The transaction proves this report existed at publish time.
+            </p>
             <div className="mt-3 space-y-3">
               <button
                 type="button"
