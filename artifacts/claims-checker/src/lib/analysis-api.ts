@@ -14,6 +14,13 @@ import {
 
 const API_BASE = "/api";
 const STORAGE_KEY = "claims-checker.records";
+const FALLBACK_WALLET_ADDRESS =
+  import.meta.env.VITE_X_LAYER_WALLET_ADDRESS?.trim() ||
+  "0xf52a8c9f07446604743ffe60b7fbf75e9d16d9ff";
+const FALLBACK_CONTRACT_ADDRESS =
+  import.meta.env.VITE_X_LAYER_CONTRACT_ADDRESS?.trim() ||
+  "0xa3a9fFddE592AE2D889562d9ca2B05d9Ae5634b3";
+const EVM_ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 
 export type XLayerNetworkConfig = {
   name: "xlayer-testnet" | "xlayer-mainnet";
@@ -94,8 +101,8 @@ export async function getXLayerSetup(): Promise<XLayerSetup> {
     console.warn("Falling back to local X Layer setup", error);
     return {
       targetNetwork: "xlayer-testnet",
-      walletAddress: "",
-      contractAddress: "",
+      walletAddress: FALLBACK_WALLET_ADDRESS,
+      contractAddress: FALLBACK_CONTRACT_ADDRESS,
       faucetUrl: "https://www.okx.com/xlayer/faucet",
       networks: {
         "xlayer-testnet": {
@@ -135,11 +142,22 @@ export async function getXLayerReadiness(): Promise<XLayerReadiness> {
     return payload.readiness;
   } catch (error) {
     console.warn("Falling back to local X Layer readiness", error);
+    const missing = [
+      !EVM_ADDRESS_PATTERN.test(FALLBACK_WALLET_ADDRESS)
+        ? "walletAddress"
+        : null,
+      !EVM_ADDRESS_PATTERN.test(FALLBACK_CONTRACT_ADDRESS)
+        ? "contractAddress"
+        : null,
+    ].filter((item): item is "walletAddress" | "contractAddress" => item !== null);
+
     return {
-      ready: false,
-      missing: ["walletAddress", "contractAddress"],
+      ready: missing.length === 0,
+      missing,
       nextStep:
-        "Add a deployed contract address, then copy the payload JSON into the wallet flow.",
+        missing.length === 0
+          ? "Copy the X Layer payload JSON when you are ready to publish a report."
+          : "Add a deployed contract address, then copy the payload JSON into the wallet flow.",
     };
   }
 }
