@@ -280,14 +280,17 @@ function Workspace({
             <div className="border border-[hsl(var(--border))] px-4 py-3">
               <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Step 1</div>
               <div className="mt-2 text-sm text-[hsl(var(--foreground))]">Paste official terms</div>
+              <div className="mt-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">Use the rulebook paragraph: limits, risks, rights, disclosures, or legal notes.</div>
             </div>
             <div className="border border-[hsl(var(--border))] px-4 py-3">
               <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Step 2</div>
               <div className="mt-2 text-sm text-[hsl(var(--foreground))]">Paste public marketing</div>
+              <div className="mt-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">Use the promise paragraph: tweet, launch copy, ad, homepage, or pitch text.</div>
             </div>
             <div className="border border-[hsl(var(--border))] px-4 py-3">
               <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Step 3</div>
               <div className="mt-2 text-sm text-[hsl(var(--foreground))]">Run the check and review the evidence</div>
+              <div className="mt-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">Long text is fine. Just paste the paragraph that carries the claim.</div>
             </div>
           </div>
         </div>
@@ -321,6 +324,9 @@ function Workspace({
           <p className="mb-3 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
             Paste the source text: terms, disclosures, docs, or risk notes. This is the side the app treats as the rulebook.
           </p>
+          <div className="mb-3 rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.45)] px-3 py-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+            For long docs, paste the paragraph that says what the project is not promising, what users are not entitled to, or what risks apply.
+          </div>
           <textarea
             value={legalTerms}
             onChange={(event) => setLegalTerms(event.target.value)}
@@ -340,6 +346,9 @@ function Workspace({
           <p className="mb-3 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
             Paste the public message: tweet, landing page, ad copy, pitch deck, or promo text. This is the side the app checks for overpromises.
           </p>
+          <div className="mb-3 rounded-none border border-[hsl(var(--border))] bg-[hsl(var(--card)/.45)] px-3 py-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+            For long promo text, paste the sentence that makes the strongest promise or most confident claim.
+          </div>
           <textarea
             value={marketingCopy}
             onChange={(event) => setMarketingCopy(event.target.value)}
@@ -389,6 +398,9 @@ function Workspace({
           )}
           <div className="mt-4 border-t border-[hsl(var(--border))] pt-3 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
             Top box = official terms and disclosures. Bottom box = public marketing. If the result looks backward, check whether the texts were swapped.
+          </div>
+          <div className="mt-3 border border-[hsl(var(--border))] bg-[hsl(var(--card)/.45)] px-3 py-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+            Example mapping from your text: marketing says the creator economy is a perpetual community-owned engine; terms say holders have zero equity rights, zero revenue claims, and no governance rights.
           </div>
         </article>
 
