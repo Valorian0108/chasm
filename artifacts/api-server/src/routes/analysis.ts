@@ -19,6 +19,14 @@ router.post("/analysis/screen", async (req, res) => {
   }
 
   const result = await engine.analyze(parsed.data);
+
+  if (result.fallbackReason) {
+    req.log.warn(
+      { fallbackReason: result.fallbackReason },
+      "Screening served by local rules instead of the AI provider",
+    );
+  }
+
   const provenance = await buildAnalysisProvenance(parsed.data, result.report, {
     provider: result.provider,
   });

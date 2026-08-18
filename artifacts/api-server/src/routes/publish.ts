@@ -17,6 +17,12 @@ router.post("/analysis/publish", (req, res) => {
     });
   }
 
+  if (!parsed.data.provenance) {
+    return res.status(400).json({
+      error: "Report provenance is required to build a publish status",
+    });
+  }
+
   const receiptSource = req.body?.receipt ?? req.body?.publishReceipt;
   const receiptPayload =
     receiptSource ??

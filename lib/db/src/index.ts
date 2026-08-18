@@ -10,4 +10,10 @@ export const pool = hasDatabaseUrl
   : null;
 export const db = pool ? drizzle(pool, { schema }) : null;
 
+// Without a listener an idle-client error is an unhandled 'error' event, which
+// terminates the process instead of surfacing the failure.
+pool?.on("error", (error) => {
+  console.error("Unexpected PostgreSQL pool error", error);
+});
+
 export * from "./schema";

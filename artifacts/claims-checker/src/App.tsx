@@ -26,6 +26,10 @@ import {
 
 const queryClient = new QueryClient();
 
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 const demoLegalTerms = `Tokenized Asset Terms & Disclosures
 Product: Reference Equity Token
 
@@ -260,6 +264,9 @@ function Workspace({
           sourceUrl: sourceUrl.trim() || undefined,
           targetNetwork: xLayerSetup?.targetNetwork ?? 'xlayer-testnet',
         }));
+      } catch (checkError) {
+        console.error('Claims check failed', checkError);
+        setError(`Could not complete the check: ${describeError(checkError)}`);
       } finally {
         setIsChecking(false);
       }
@@ -488,6 +495,7 @@ function ReportView({
   const [publishTxHash, setPublishTxHash] = useState('');
   const [publishExplorerUrl, setPublishExplorerUrl] = useState('');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveError, setSaveError] = useState('');
   const checkedAt = useMemo(() => new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(report.checkedAt)), [report.checkedAt]);
   const highCount = report.findings.filter((finding) => finding.severity === 'high').length;
   const publicationChecklist = useMemo(
@@ -578,12 +586,32 @@ function ReportView({
               {showMethod ? 'Hide method' : 'How this works'}
             </TypographicLink>
             <TypographicLink
-              onClick={async () => setPublication(await preparePublication(report))}
+              onClick={async () => {
+                try {
+                  setPublication(await preparePublication(report));
+                } catch (error) {
+                  console.error('Unable to prepare the proof package', error);
+                  toast({
+                    title: "Couldn't prepare the proof package",
+                    description: describeError(error),
+                  });
+                }
+              }}
             >
               Prepare proof package
             </TypographicLink>
             <TypographicLink
-              onClick={async () => setPublishStatus(await preparePublishStatus(report))}
+              onClick={async () => {
+                try {
+                  setPublishStatus(await preparePublishStatus(report));
+                } catch (error) {
+                  console.error('Unable to check publish readiness', error);
+                  toast({
+                    title: "Couldn't check publish readiness",
+                    description: describeError(error),
+                  });
+                }
+              }}
             >
               Check publish readiness
             </TypographicLink>
@@ -591,11 +619,13 @@ function ReportView({
               onClick={async () => {
                 setSaveStatus('saving');
                 try {
+                  setSaveError('');
                   await saveReport(report);
                   await onRecordSaved();
                   setSaveStatus('saved');
                 } catch (error) {
-                  console.warn(error);
+                  console.error('Unable to save the research record', error);
+                  setSaveError(describeError(error));
                   setSaveStatus('error');
                 }
               }}
@@ -610,7 +640,11 @@ function ReportView({
           )}
           {saveStatus !== 'idle' && (
             <p className="mt-4 text-xs text-[hsl(var(--muted-foreground))]">
-              {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Record saved for later review.' : 'Could not save record.'}
+              {saveStatus === 'saving'
+                ? 'Saving…'
+                : saveStatus === 'saved'
+                  ? 'Record saved for later review.'
+                  : `Could not save record. ${saveError}`}
             </p>
           )}
         </article>
@@ -744,11 +778,21 @@ function ReportView({
                 className="w-full border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-xs text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground)/.34)]"
               />
               <TypographicLink
-                onClick={async () => setPublishStatus(await finalizePublishStatus(report, {
-                  txHash: publishTxHash.trim(),
-                  explorerUrl: publishExplorerUrl.trim() || undefined,
-                  publishedAt: new Date().toISOString(),
-                }))}
+                onClick={async () => {
+                  try {
+                    setPublishStatus(await finalizePublishStatus(report, {
+                      txHash: publishTxHash.trim(),
+                      explorerUrl: publishExplorerUrl.trim() || undefined,
+                      publishedAt: new Date().toISOString(),
+                    }));
+                  } catch (error) {
+                    console.error('Unable to mark the report published', error);
+                    toast({
+                      title: "Couldn't mark the report published",
+                      description: describeError(error),
+                    });
+                  }
+                }}
               >
                 Mark published on testnet
               </TypographicLink>
@@ -841,10 +885,12 @@ function ReportView({
 function RecordsLedger({
   records,
   isLoading,
+  error,
   onRefresh,
 }: {
   records: AnalysisRecord[];
   isLoading: boolean;
+  error?: string;
   onRefresh: () => Promise<void>;
 }) {
   const visibleRecords = records.slice(0, 6);
@@ -869,6 +915,15 @@ function RecordsLedger({
           Refresh ledger
         </button>
       </div>
+
+      {error ? (
+        <div
+          data-testid="text-records-error"
+          className="mt-5 border border-[hsl(var(--destructive)/.35)] bg-[hsl(var(--destructive)/.08)] px-4 py-3 text-xs leading-6 text-[hsl(var(--destructive))]"
+        >
+          Could not load the ledger: {error}
+        </div>
+      ) : null}
 
       {visibleRecords.length === 0 ? (
         <div className="mt-5 paper-panel text-sm text-[hsl(var(--muted-foreground))]">
@@ -943,14 +998,17 @@ function Home() {
   const [xLayerSetup, setXLayerSetup] = useState<XLayerSetup | null>(null);
   const [xLayerReadiness, setXLayerReadiness] = useState<XLayerReadiness | null>(null);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
+  const [recordsError, setRecordsError] = useState('');
   const reset = () => setReport(null);
 
   const refreshRecords = async () => {
     setIsLoadingRecords(true);
     try {
       setRecords(await listRecords());
+      setRecordsError('');
     } catch (error) {
-      console.warn("Unable to load saved records", error);
+      console.error("Unable to load saved records", error);
+      setRecordsError(describeError(error));
     } finally {
       setIsLoadingRecords(false);
     }
@@ -960,7 +1018,11 @@ function Home() {
     try {
       setXLayerSetup(await getXLayerSetup());
     } catch (error) {
-      console.warn("Unable to load X Layer setup", error);
+      console.error("Unable to load X Layer setup", error);
+      toast({
+        title: "Couldn't load the X Layer setup",
+        description: describeError(error),
+      });
     }
   };
 
@@ -968,7 +1030,11 @@ function Home() {
     try {
       setXLayerReadiness(await getXLayerReadiness());
     } catch (error) {
-      console.warn("Unable to load X Layer readiness", error);
+      console.error("Unable to load X Layer readiness", error);
+      toast({
+        title: "Couldn't load the X Layer readiness check",
+        description: describeError(error),
+      });
     }
   };
 
@@ -998,7 +1064,12 @@ function Home() {
           />
         )}
       </div>
-      <RecordsLedger records={records} isLoading={isLoadingRecords} onRefresh={refreshRecords} />
+      <RecordsLedger
+        records={records}
+        isLoading={isLoadingRecords}
+        error={recordsError}
+        onRefresh={refreshRecords}
+      />
       <footer className="mx-auto max-w-[1480px] px-5 pb-8 pt-10 sm:px-8 lg:px-12">
         <div className="border-t border-[hsl(var(--border))] pt-6">
           <p className="max-w-4xl font-serif text-2xl leading-[1.1] text-[hsl(var(--foreground))] sm:text-3xl">

@@ -5,11 +5,12 @@ import {
   buildXLayerPublication,
 } from "@workspace/api-zod";
 import { db, analysisRecordsTable, type InsertAnalysisRecord } from "@workspace/db";
+import { HttpError } from "../lib/http-error";
 
 const router: IRouter = Router();
 const memoryStore: InsertAnalysisRecord[] = [];
 
-router.post("/analysis/records", async (req, res) => {
+router.post("/analysis/records", async (req, res, next) => {
   const parsed = analysisReportSchema.safeParse(req.body);
 
   if (!parsed.success) {
@@ -20,6 +21,13 @@ router.post("/analysis/records", async (req, res) => {
   }
 
   const report = parsed.data;
+
+  if (!report.provenance) {
+    return res.status(400).json({
+      error: "Report provenance is required to save an analysis record",
+    });
+  }
+
   const publication = buildXLayerPublication(report);
   const values: InsertAnalysisRecord = {
     checkedAt: report.checkedAt,
@@ -43,8 +51,27 @@ router.post("/analysis/records", async (req, res) => {
   };
 
   if (db) {
-    const inserted = await db.insert(analysisRecordsTable).values(values).returning();
-    return res.status(201).json({ status: "saved", record: inserted[0] });
+    try {
+      const inserted = await db
+        .insert(analysisRecordsTable)
+        .values(values)
+        .returning();
+      const record = inserted[0];
+
+      if (!record) {
+        throw new HttpError(500, "Database insert returned no record");
+      }
+
+      return res.status(201).json({ status: "saved", record });
+    } catch (error) {
+      return next(
+        error instanceof HttpError
+          ? error
+          : new HttpError(503, "Unable to save analysis record", {
+              cause: error,
+            }),
+      );
+    }
   }
 
   const record = { id: memoryStore.length + 1, ...values };
@@ -52,19 +79,24 @@ router.post("/analysis/records", async (req, res) => {
   return res.status(201).json({ status: "saved", record });
 });
 
-router.get("/analysis/records", (_req, res) => {
+router.get("/analysis/records", async (_req, res, next) => {
   if (db) {
-    return db
-      .select()
-      .from(analysisRecordsTable)
-      .orderBy(desc(analysisRecordsTable.id))
-      .limit(25)
-      .then((records) => {
-        res.json({
-          status: "ok",
-          records,
-        });
+    try {
+      const records = await db
+        .select()
+        .from(analysisRecordsTable)
+        .orderBy(desc(analysisRecordsTable.id))
+        .limit(25);
+
+      return res.json({
+        status: "ok",
+        records,
       });
+    } catch (error) {
+      return next(
+        new HttpError(503, "Unable to load analysis records", { cause: error }),
+      );
+    }
   }
 
   return res.json({
