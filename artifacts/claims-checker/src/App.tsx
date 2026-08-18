@@ -23,7 +23,6 @@ import {
   type XLayerReadiness,
   type XLayerSetup,
 } from '@/lib/analysis-api';
-import { publishToXLayer } from '@/lib/xlayer-wallet';
 
 const queryClient = new QueryClient();
 
@@ -488,7 +487,6 @@ function ReportView({
   const [publishStatus, setPublishStatus] = useState<Awaited<ReturnType<typeof preparePublishStatus>> | null>(null);
   const [publishTxHash, setPublishTxHash] = useState('');
   const [publishExplorerUrl, setPublishExplorerUrl] = useState('');
-  const [isPublishingToXLayer, setIsPublishingToXLayer] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const checkedAt = useMemo(() => new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(report.checkedAt)), [report.checkedAt]);
   const highCount = report.findings.filter((finding) => finding.severity === 'high').length;
@@ -511,48 +509,6 @@ function ReportView({
         title: `Couldn't copy ${label.toLowerCase()}`,
         description: "Your browser may have blocked clipboard access.",
       });
-    }
-  };
-
-  const publishWithWallet = async () => {
-    if (!xLayerSetup) {
-      toast({
-        title: "X Layer setup still loading",
-        description: "Try again once the contract details appear.",
-      });
-      return;
-    }
-
-    setIsPublishingToXLayer(true);
-    try {
-      const payload = xLayerPayload ?? await preparePublication(report);
-      setPublication(payload);
-      setPublishStatus(await preparePublishStatus(report));
-
-      const receipt = await publishToXLayer(payload, xLayerSetup);
-      setPublishTxHash(receipt.txHash);
-      setPublishExplorerUrl(receipt.explorerUrl);
-      setPublishStatus(await finalizePublishStatus(report, {
-        txHash: receipt.txHash,
-        explorerUrl: receipt.explorerUrl,
-        publishedAt: new Date().toISOString(),
-      }));
-
-      toast({
-        title: "Published to X Layer testnet",
-        description: `${receipt.txHash.slice(0, 10)}...${receipt.txHash.slice(-6)}`,
-      });
-    } catch (error) {
-      console.warn("Unable to publish to X Layer", error);
-      toast({
-        title: "X Layer publish failed",
-        description:
-          error instanceof Error
-            ? error.message
-            : "The wallet rejected or could not broadcast the transaction.",
-      });
-    } finally {
-      setIsPublishingToXLayer(false);
     }
   };
 
@@ -765,18 +721,12 @@ function ReportView({
           <div className="paper-panel">
             <div className="font-mono text-[10px] uppercase tracking-[.18em] text-[hsl(var(--muted-foreground))]">Publish proof</div>
             <p className="mt-2 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
-              This sends only fingerprints to X Layer, not the full pasted text. The transaction proves this report existed at publish time.
+              Wallet publishing is paused for now. You can still prepare fingerprints, copy the proof package, or paste a known testnet transaction to mark a report.
             </p>
             <div className="mt-3 space-y-3">
-              <button
-                type="button"
-                onClick={publishWithWallet}
-                disabled={isPublishingToXLayer || !xLayerReadiness?.ready}
-                className="inline-flex w-full items-center justify-between gap-3 border border-[hsl(var(--primary))] px-4 py-3 text-left text-xs font-medium text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--primary))] hover:text-[hsl(var(--primary-foreground))] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <span>{isPublishingToXLayer ? 'Waiting for wallet confirmation' : 'Publish with wallet'}</span>
-                {isPublishingToXLayer ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={15} />}
-              </button>
+              <div className="border border-dashed border-[hsl(var(--border))] px-4 py-3 text-xs leading-6 text-[hsl(var(--muted-foreground))]">
+                Wallet broadcast paused. Use <span className="font-medium text-[hsl(var(--foreground))]">Prepare proof package</span> above, then publish manually later when the demo flow is ready.
+              </div>
               <input
                 value={publishTxHash}
                 onChange={(event) => setPublishTxHash(event.target.value)}
