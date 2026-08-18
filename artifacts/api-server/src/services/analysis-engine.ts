@@ -1,4 +1,4 @@
-import { loadEnvFiles } from "../lib/load-env";
+import { loadEnvFiles } from "@workspace/env";
 import {
   analyzeClaims,
   type AnalysisRequest,

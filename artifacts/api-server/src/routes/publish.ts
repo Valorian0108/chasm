@@ -4,17 +4,20 @@ import {
   publishReceiptSchema,
 } from "@workspace/api-zod";
 import { xLayerPublisher } from "../services/xlayer-publisher";
+import { parseWithValidation } from "../lib/validation";
 
 const router: IRouter = Router();
 
 router.post("/analysis/publish", (req, res) => {
-  const parsed = analysisReportSchema.safeParse(req.body?.report ?? req.body);
+  const parsed = parseWithValidation(
+    analysisReportSchema,
+    req.body?.report ?? req.body,
+    res,
+    "Invalid analysis report",
+  );
 
   if (!parsed.success) {
-    return res.status(400).json({
-      error: "Invalid analysis report",
-      details: parsed.error.flatten(),
-    });
+    return;
   }
 
   const receiptSource = req.body?.receipt ?? req.body?.publishReceipt;
@@ -29,14 +32,16 @@ router.post("/analysis/publish", (req, res) => {
       : undefined);
 
   const receipt = receiptPayload
-    ? publishReceiptSchema.safeParse(receiptPayload)
+    ? parseWithValidation(
+        publishReceiptSchema,
+        receiptPayload,
+        res,
+        "Invalid publish receipt",
+      )
     : undefined;
 
   if (receipt && !receipt.success) {
-    return res.status(400).json({
-      error: "Invalid publish receipt",
-      details: receipt.error.flatten(),
-    });
+    return;
   }
 
   const status = receipt?.success

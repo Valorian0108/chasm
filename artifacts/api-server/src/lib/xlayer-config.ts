@@ -1,4 +1,5 @@
-import { loadEnvFiles } from "./load-env";
+import type { AnalysisReport } from "@workspace/api-zod";
+import { loadEnvFiles } from "@workspace/env";
 
 loadEnvFiles();
 
@@ -77,6 +78,14 @@ export function getXLayerNetworkLabel(
   network: XLayerNetworkName = xLayerConfig.targetNetwork,
 ): string {
   return network === "xlayer-mainnet" ? "X Layer mainnet" : "X Layer testnet";
+}
+
+export function getXLayerReportNetworkName(
+  report: AnalysisReport,
+): XLayerNetworkName {
+  return report.provenance?.network === "xlayer-mainnet"
+    ? "xlayer-mainnet"
+    : "xlayer-testnet";
 }
 
 function isEvmAddress(value: string): boolean {

@@ -4,18 +4,21 @@ import {
   buildAnalysisProvenance,
 } from "@workspace/api-zod";
 import { createAnalysisEngine } from "../services/analysis-engine";
+import { parseWithValidation } from "../lib/validation";
 
 const router: IRouter = Router();
 const engine = createAnalysisEngine();
 
 router.post("/analysis/screen", async (req, res) => {
-  const parsed = analysisRequestSchema.safeParse(req.body);
+  const parsed = parseWithValidation(
+    analysisRequestSchema,
+    req.body,
+    res,
+    "Invalid analysis request",
+  );
 
   if (!parsed.success) {
-    return res.status(400).json({
-      error: "Invalid analysis request",
-      details: parsed.error.flatten(),
-    });
+    return;
   }
 
   const result = await engine.analyze(parsed.data);

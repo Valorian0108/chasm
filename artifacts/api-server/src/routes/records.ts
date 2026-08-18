@@ -5,18 +5,21 @@ import {
   buildXLayerPublication,
 } from "@workspace/api-zod";
 import { db, analysisRecordsTable, type InsertAnalysisRecord } from "@workspace/db";
+import { parseWithValidation } from "../lib/validation";
 
 const router: IRouter = Router();
 const memoryStore: InsertAnalysisRecord[] = [];
 
 router.post("/analysis/records", async (req, res) => {
-  const parsed = analysisReportSchema.safeParse(req.body);
+  const parsed = parseWithValidation(
+    analysisReportSchema,
+    req.body,
+    res,
+    "Invalid analysis report",
+  );
 
   if (!parsed.success) {
-    return res.status(400).json({
-      error: "Invalid analysis report",
-      details: parsed.error.flatten(),
-    });
+    return;
   }
 
   const report = parsed.data;
