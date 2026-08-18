@@ -6,7 +6,11 @@
     "preinstall": "node -e \"const fs=require('fs'); if (fs.existsSync('package-lock.json')) fs.unlinkSync('package-lock.json'); if (fs.existsSync('yarn.lock')) fs.unlinkSync('yarn.lock'); if (!String(process.env.npm_config_user_agent||'').startsWith('pnpm/')) { console.error('Use pnpm instead'); process.exit(1); }\"",
     "build": "pnpm run typecheck && pnpm --filter @workspace/claims-checker run build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck && pnpm run typecheck:tests",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "private": true,
   "dependencies": {
@@ -15,8 +19,15 @@
   "devDependencies": {
     "@rollup/rollup-win32-x64-msvc": "4.62.3",
     "@tailwindcss/oxide-win32-x64-msvc": "4.3.3",
+    "@types/node": "^25.3.3",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "jsdom": "^26.1.0",
     "lightningcss-win32-x64-msvc": "1.32.0",
     "prettier": "^3.9.6",
-    "typescript": "~5.9.3"
+    "supertest": "^7.2.2",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.2",
+    "vitest": "^4.1.10"
   }
 }

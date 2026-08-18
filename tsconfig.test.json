@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "jsx": "preserve",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@workspace/api-zod": ["./lib/api-zod/src/index.ts"],
+      "@/*": ["./artifacts/claims-checker/src/*"]
+    }
+  },
+  "include": [
+    "vitest.config.mts",
+    "lib/**/*.test.ts",
+    "artifacts/api-server/**/*.test.ts",
+    "artifacts/claims-checker/src/**/*.test.ts"
+  ]
+}
