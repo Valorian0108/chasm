@@ -1,38 +1,54 @@
 import { z } from "zod/v4";
 
+export const MAX_SOURCE_TEXT_CHARS = 20_000;
+export const MAX_SOURCE_LABEL_CHARS = 200;
+export const MAX_URL_CHARS = 2_048;
+export const MAX_FINDINGS = 50;
+export const MAX_FINDING_TEXT_CHARS = 2_000;
+export const MAX_HASH_CHARS = 128;
+
+const httpUrlSchema = z
+  .string()
+  .url()
+  .max(MAX_URL_CHARS)
+  .refine(
+    (value) => /^https?:\/\//i.test(value.trim()),
+    "Only http and https URLs are allowed",
+  );
+
 export const severitySchema = z.enum(["high", "medium", "low"]);
 
 export const findingSchema = z.object({
-  title: z.string(),
+  title: z.string().max(MAX_FINDING_TEXT_CHARS),
   severity: severitySchema,
-  marketingQuote: z.string(),
-  termsQuote: z.string(),
-  explanation: z.string(),
+  marketingQuote: z.string().max(MAX_FINDING_TEXT_CHARS),
+  termsQuote: z.string().max(MAX_FINDING_TEXT_CHARS),
+  explanation: z.string().max(MAX_FINDING_TEXT_CHARS),
   confidence: z.number().int().min(0).max(100),
 });
 
 export const analysisReportSchema = z.object({
-  checkedAt: z.string(),
+  checkedAt: z.string().max(MAX_SOURCE_LABEL_CHARS),
   status: z.enum(["flagged", "clear"]),
   score: z.number().int().min(0).max(100),
-  summary: z.string(),
-  findings: z.array(findingSchema),
+  summary: z.string().max(MAX_FINDING_TEXT_CHARS),
+  findings: z.array(findingSchema).max(MAX_FINDINGS),
   provenance: z
     .object({
       provider: z.enum(["local", "ai", "fallback"]),
       network: z.enum(["local", "xlayer-testnet", "xlayer-mainnet"]),
-      sourceLabel: z.string().min(1).optional(),
-      sourceUrl: z.string().url().optional(),
+      sourceLabel: z.string().min(1).max(MAX_SOURCE_LABEL_CHARS).optional(),
+      sourceUrl: httpUrlSchema.optional(),
       hashes: z.object({
-        officialTerms: z.string(),
-        publicMarketing: z.string(),
-        report: z.string(),
+        officialTerms: z.string().max(MAX_HASH_CHARS),
+        publicMarketing: z.string().max(MAX_HASH_CHARS),
+        report: z.string().max(MAX_HASH_CHARS),
       }),
       chainRecord: z.object({
         status: z.enum(["not_started", "ready", "published"]),
-        txHash: z.string().min(1).optional(),
-        explorerUrl: z.string().url().optional(),
-        publishedAt: z.string().optional(),
+        txHash: z.string().min(1).max(MAX_HASH_CHARS).optional(),
+        explorerUrl: httpUrlSchema.optional(),
+        publishedAt: z.string().max(MAX_SOURCE_LABEL_CHARS).optional(),
       }),
   })
     .optional(),
@@ -40,8 +56,8 @@ export const analysisReportSchema = z.object({
 
 export const xLayerPublicationSchema = z.object({
   network: z.enum(["xlayer-testnet", "xlayer-mainnet"]),
-  sourceLabel: z.string().min(1).optional(),
-  sourceUrl: z.string().url().optional(),
+  sourceLabel: z.string().min(1).max(MAX_SOURCE_LABEL_CHARS).optional(),
+  sourceUrl: httpUrlSchema.optional(),
   reportHash: z.string().min(1),
   officialTermsHash: z.string().min(1),
   publicMarketingHash: z.string().min(1),
@@ -63,22 +79,22 @@ export const publishStatusSchema = z.object({
   network: z.enum(["xlayer-testnet", "xlayer-mainnet"]),
   payload: xLayerPublicationSchema,
   checklist: publicationChecklistItemSchema.array(),
-  txHash: z.string().min(1).optional(),
-  explorerUrl: z.string().url().optional(),
-  publishedAt: z.string().optional(),
+  txHash: z.string().min(1).max(MAX_HASH_CHARS).optional(),
+  explorerUrl: httpUrlSchema.optional(),
+  publishedAt: z.string().max(MAX_SOURCE_LABEL_CHARS).optional(),
 });
 
 export const publishReceiptSchema = z.object({
-  txHash: z.string().min(1),
-  explorerUrl: z.string().url().optional(),
+  txHash: z.string().min(1).max(MAX_HASH_CHARS),
+  explorerUrl: httpUrlSchema.optional(),
   publishedAt: z.string().datetime().optional(),
 });
 
 export const analysisRequestSchema = z.object({
-  officialTerms: z.string().trim().min(1),
-  publicMarketing: z.string().trim().min(1),
-  sourceLabel: z.string().trim().min(1).optional(),
-  sourceUrl: z.string().url().optional(),
+  officialTerms: z.string().trim().min(1).max(MAX_SOURCE_TEXT_CHARS),
+  publicMarketing: z.string().trim().min(1).max(MAX_SOURCE_TEXT_CHARS),
+  sourceLabel: z.string().trim().min(1).max(MAX_SOURCE_LABEL_CHARS).optional(),
+  sourceUrl: httpUrlSchema.optional(),
   targetNetwork: z.enum(["local", "xlayer-testnet", "xlayer-mainnet"]).optional(),
 });
 

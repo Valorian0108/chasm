@@ -4,11 +4,14 @@ import {
   buildAnalysisProvenance,
 } from "@workspace/api-zod";
 import { createAnalysisEngine } from "../services/analysis-engine";
+import { rateLimit } from "../lib/security";
 
 const router: IRouter = Router();
 const engine = createAnalysisEngine();
 
-router.post("/analysis/screen", async (req, res) => {
+const screenRateLimit = rateLimit({ windowMs: 60_000, max: 20 });
+
+router.post("/analysis/screen", screenRateLimit, async (req, res) => {
   const parsed = analysisRequestSchema.safeParse(req.body);
 
   if (!parsed.success) {
