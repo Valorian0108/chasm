@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Claims Checker"
+description = "An AI-powered RWA credibility tool that compares public marketing claims with official legal terms, explains unsupported promises in plain language, and prepares a tamper-evident check record."
+version = "1.0.0"
+id = "artifacts/claims-checker"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22541
+
+[services.development]
+run = "pnpm --filter @workspace/claims-checker run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/claims-checker", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/claims-checker/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22541"
+BASE_PATH = "/"

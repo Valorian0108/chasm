@@ -1,0 +1,16 @@
+[build]
+  command = "pnpm run build"
+  publish = "artifacts/claims-checker/dist/public"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[redirects]]
+  from = "/api/analysis/screen"
+  to = "/.netlify/functions/analysis-screen"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

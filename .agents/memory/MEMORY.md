@@ -1,0 +1,1 @@
+- [Local-first screening](local-first-screening.md) — Keep early claims checks usable without an LLM; AI should enhance the evidence report rather than block the proof of concept.
