@@ -199,10 +199,12 @@ pnpm --filter @workspace/claims-checker run dev
 
 Current deployment target:
 
-- Netlify
+- Vercel
 - Build command: `pnpm run build`
 - Publish directory: `artifacts/claims-checker/dist/public`
 - AI route: `/api/analysis/screen`
+
+Netlify support still exists in the repo, but Vercel is the preferred deployment path now.
 
 Required hosted environment variables:
 
