@@ -72,6 +72,27 @@ paths:
                 $ref: "#/components/schemas/PublicationPrepResponse"
         "400":
           description: Invalid request
+  /analysis/publish:
+    post:
+      operationId: preparePublishStatus
+      tags: [publication]
+      summary: Prepare a publish status shell
+      description: Validates a screening report and returns a publish status object with checklist and next action guidance.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalysisReport"
+      responses:
+        "200":
+          description: Publish status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishStatus"
+        "400":
+          description: Invalid request
   /analysis/records:
     post:
       operationId: saveAnalysisRecord
@@ -263,3 +284,49 @@ components:
       required:
         - status
         - payload
+    PublicationChecklistItem:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        detail:
+          type: string
+        complete:
+          type: boolean
+      required:
+        - key
+        - label
+        - detail
+        - complete
+    PublishStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, ready, published]
+        network:
+          type: string
+          enum: [xlayer-testnet, xlayer-mainnet]
+        payload:
+          $ref: "#/components/schemas/PublicationPrepResponse/properties/payload"
+        checklist:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicationChecklistItem"
+        txHash:
+          type: string
+        explorerUrl:
+          type: string
+          format: uri
+        publishedAt:
+          type: string
+        nextAction:
+          type: string
+      required:
+        - status
+        - network
+        - payload
+        - checklist
+        - nextAction

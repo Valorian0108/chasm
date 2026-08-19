@@ -3,13 +3,45 @@ import {
   analysisReportSchema,
   analysisRequestSchema,
   buildAnalysisProvenance,
+  publishReceiptSchema,
+  buildPublishStatus,
   buildXLayerPublication,
   type AnalysisReport,
+  type PublishReceipt,
+  type PublishStatus,
   type XLayerPublication,
 } from "@workspace/api-zod";
 
 const API_BASE = "/api";
 const STORAGE_KEY = "claims-checker.records";
+const FALLBACK_WALLET_ADDRESS =
+  import.meta.env.VITE_X_LAYER_WALLET_ADDRESS?.trim() ||
+  "0xf52a8c9f07446604743ffe60b7fbf75e9d16d9ff";
+const FALLBACK_CONTRACT_ADDRESS =
+  import.meta.env.VITE_X_LAYER_CONTRACT_ADDRESS?.trim() ||
+  "0xa3a9fFddE592AE2D889562d9ca2B05d9Ae5634b3";
+const EVM_ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
+
+export type XLayerNetworkConfig = {
+  name: "xlayer-testnet" | "xlayer-mainnet";
+  chainId: number;
+  rpcUrl: string;
+  explorerUrl: string;
+};
+
+export type XLayerSetup = {
+  targetNetwork: "xlayer-testnet" | "xlayer-mainnet";
+  walletAddress: string;
+  contractAddress: string;
+  faucetUrl: string;
+  networks: Record<"xlayer-testnet" | "xlayer-mainnet", XLayerNetworkConfig>;
+};
+
+export type XLayerReadiness = {
+  ready: boolean;
+  missing: Array<"walletAddress" | "contractAddress">;
+  nextStep: string;
+};
 
 export type AnalysisRecord = {
   id: number;
@@ -33,15 +65,118 @@ export type AnalysisRecord = {
   createdAt: string;
 };
 
+export function getDefaultSourceMetadata() {
+  if (typeof window === "undefined") {
+    return {
+      sourceLabel: "Browser screening session",
+      sourceUrl: "",
+    };
+  }
+
+  return {
+    sourceLabel: `${window.location.hostname || "Browser"} screening session`,
+    sourceUrl: window.location.origin,
+  };
+}
+
+export async function getXLayerSetup(): Promise<XLayerSetup> {
+  try {
+    const response = await fetch(`${API_BASE}/xlayer/config`);
+
+    if (!response.ok) {
+      throw new Error(`X Layer config API returned ${response.status}`);
+    }
+
+    const payload = (await response.json()) as {
+      status?: string;
+      xLayer?: XLayerSetup;
+    };
+
+    if (!payload.xLayer) {
+      throw new Error("X Layer config payload missing");
+    }
+
+    return payload.xLayer;
+  } catch (error) {
+    console.warn("Falling back to local X Layer setup", error);
+    return {
+      targetNetwork: "xlayer-testnet",
+      walletAddress: FALLBACK_WALLET_ADDRESS,
+      contractAddress: FALLBACK_CONTRACT_ADDRESS,
+      faucetUrl: "https://www.okx.com/xlayer/faucet",
+      networks: {
+        "xlayer-testnet": {
+          name: "xlayer-testnet",
+          chainId: 1952,
+          rpcUrl: "https://testrpc.xlayer.tech/terigon",
+          explorerUrl: "https://www.okx.com/web3/explorer/xlayer-test",
+        },
+        "xlayer-mainnet": {
+          name: "xlayer-mainnet",
+          chainId: 196,
+          rpcUrl: "https://rpc.xlayer.tech",
+          explorerUrl: "https://www.okx.com/web3/explorer/xlayer",
+        },
+      },
+    };
+  }
+}
+
+export async function getXLayerReadiness(): Promise<XLayerReadiness> {
+  try {
+    const response = await fetch(`${API_BASE}/xlayer/readiness`);
+
+    if (!response.ok) {
+      throw new Error(`X Layer readiness API returned ${response.status}`);
+    }
+
+    const payload = (await response.json()) as {
+      status?: string;
+      readiness?: XLayerReadiness;
+    };
+
+    if (!payload.readiness) {
+      throw new Error("X Layer readiness payload missing");
+    }
+
+    return payload.readiness;
+  } catch (error) {
+    console.warn("Falling back to local X Layer readiness", error);
+    const missing = [
+      !EVM_ADDRESS_PATTERN.test(FALLBACK_WALLET_ADDRESS)
+        ? "walletAddress"
+        : null,
+      !EVM_ADDRESS_PATTERN.test(FALLBACK_CONTRACT_ADDRESS)
+        ? "contractAddress"
+        : null,
+    ].filter((item): item is "walletAddress" | "contractAddress" => item !== null);
+
+    return {
+      ready: missing.length === 0,
+      missing,
+      nextStep:
+        missing.length === 0
+          ? "Copy the X Layer payload JSON when you are ready to publish a report."
+          : "Add a deployed contract address, then copy the payload JSON into the wallet flow.",
+    };
+  }
+}
+
 export async function screenClaims(
   officialTerms: string,
   publicMarketing: string,
+  options?: {
+    sourceLabel?: string;
+    sourceUrl?: string;
+    targetNetwork?: "local" | "xlayer-testnet" | "xlayer-mainnet";
+  },
 ): Promise<AnalysisReport> {
   const request = analysisRequestSchema.parse({
     officialTerms,
     publicMarketing,
-    sourceLabel: "Browser screening session",
-    targetNetwork: "local",
+    sourceLabel: options?.sourceLabel ?? getDefaultSourceMetadata().sourceLabel,
+    sourceUrl: options?.sourceUrl ?? getDefaultSourceMetadata().sourceUrl,
+    targetNetwork: options?.targetNetwork ?? "local",
   });
 
   try {
@@ -93,6 +228,83 @@ export async function preparePublication(
   } catch (error) {
     console.warn("Falling back to local publication prep", error);
     return buildXLayerPublication(report);
+  }
+}
+
+export async function preparePublishStatus(
+  report: AnalysisReport,
+): Promise<PublishStatus & { nextAction: string }> {
+  try {
+    const response = await fetch(`${API_BASE}/analysis/publish`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(report),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Publish API returned ${response.status}`);
+    }
+
+    return response.json() as Promise<PublishStatus & { nextAction: string }>;
+  } catch (error) {
+    console.warn("Falling back to local publish status", error);
+    const published = buildPublishStatus(report, {
+      txHash: report.provenance?.chainRecord.txHash,
+      explorerUrl: report.provenance?.chainRecord.explorerUrl,
+      publishedAt: report.provenance?.chainRecord.publishedAt,
+    });
+
+    return {
+      ...published,
+      nextAction:
+        published.status === "published"
+          ? "Track the confirmed transaction on the explorer."
+          : "Send the payload through the testnet wallet flow to broadcast the transaction.",
+    };
+  }
+}
+
+export async function finalizePublishStatus(
+  report: AnalysisReport,
+  receipt: PublishReceipt,
+): Promise<PublishStatus & { nextAction: string }> {
+  const parsedReceipt = publishReceiptSchema.parse(receipt);
+
+  try {
+    const response = await fetch(`${API_BASE}/analysis/publish`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        report,
+        receipt: parsedReceipt,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Publish API returned ${response.status}`);
+    }
+
+    return response.json() as Promise<PublishStatus & { nextAction: string }>;
+  } catch (error) {
+    console.warn("Falling back to local published status", error);
+    const status = buildPublishStatus(report, {
+      txHash: parsedReceipt.txHash,
+      explorerUrl: parsedReceipt.explorerUrl,
+      publishedAt: parsedReceipt.publishedAt,
+    });
+
+    return {
+      ...status,
+      status: "published",
+      txHash: parsedReceipt.txHash,
+      explorerUrl: parsedReceipt.explorerUrl,
+      publishedAt: parsedReceipt.publishedAt,
+      nextAction: "Track the confirmed transaction on the explorer.",
+    };
   }
 }
 

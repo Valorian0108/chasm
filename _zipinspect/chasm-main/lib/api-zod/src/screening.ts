@@ -51,6 +51,29 @@ export const xLayerPublicationSchema = z.object({
   timestamp: z.string().min(1),
 });
 
+export const publicationChecklistItemSchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  detail: z.string().min(1),
+  complete: z.boolean(),
+});
+
+export const publishStatusSchema = z.object({
+  status: z.enum(["pending", "ready", "published"]),
+  network: z.enum(["xlayer-testnet", "xlayer-mainnet"]),
+  payload: xLayerPublicationSchema,
+  checklist: publicationChecklistItemSchema.array(),
+  txHash: z.string().min(1).optional(),
+  explorerUrl: z.string().url().optional(),
+  publishedAt: z.string().optional(),
+});
+
+export const publishReceiptSchema = z.object({
+  txHash: z.string().min(1),
+  explorerUrl: z.string().url().optional(),
+  publishedAt: z.string().datetime().optional(),
+});
+
 export const analysisRequestSchema = z.object({
   officialTerms: z.string().trim().min(1),
   publicMarketing: z.string().trim().min(1),
@@ -65,6 +88,11 @@ export type AnalysisReport = z.infer<typeof analysisReportSchema>;
 export type AnalysisRequest = z.infer<typeof analysisRequestSchema>;
 export type AnalysisProvenance = NonNullable<AnalysisReport["provenance"]>;
 export type XLayerPublication = z.infer<typeof xLayerPublicationSchema>;
+export type PublicationChecklistItem = z.infer<
+  typeof publicationChecklistItemSchema
+>;
+export type PublishStatus = z.infer<typeof publishStatusSchema>;
+export type PublishReceipt = z.infer<typeof publishReceiptSchema>;
 
 const demoFindings: Finding[] = [
   {
@@ -99,6 +127,17 @@ const demoFindings: Finding[] = [
   },
 ];
 
+const guaranteedReturnFinding: Finding = {
+  title: "Guaranteed return language conflicts with risk disclosures",
+  severity: "high",
+  marketingQuote: "Earn guaranteed passive income with zero risk.",
+  termsQuote:
+    "Rewards are variable and not guaranteed. Users may lose funds due to market risk.",
+  explanation:
+    "The marketing promises certainty and safety, while the terms say rewards can vary, are not guaranteed, and users may lose funds.",
+  confidence: 97,
+};
+
 export function findSentence(text: string, pattern: RegExp) {
   return text
     .split(/(?<=[.!?])\s+|\n+/)
@@ -117,6 +156,28 @@ export function analyzeClaims(
   const addIf = (condition: boolean, finding: Finding) => {
     if (condition) findings.push(finding);
   };
+
+  addIf(
+    /guaranteed|guarantee|zero risk|no risk|risk-free|safe passive|passive income|fixed return|fixed yield/.test(
+      marketing,
+    ) &&
+      /not guaranteed|variable|may lose|lose funds|market risk|risk|not insured|not protected/.test(
+        legal,
+      ),
+    {
+      ...guaranteedReturnFinding,
+      marketingQuote:
+        findSentence(
+          publicMarketing,
+          /guaranteed|guarantee|zero risk|no risk|risk-free|safe passive|passive income|fixed return|fixed yield/i,
+        ) || guaranteedReturnFinding.marketingQuote,
+      termsQuote:
+        findSentence(
+          officialTerms,
+          /not guaranteed|variable|may lose|lose funds|market risk|risk|not insured|not protected/i,
+        ) || guaranteedReturnFinding.termsQuote,
+    },
+  );
 
   addIf(
     /backed .*1:1|own a piece|ownership|shareholder|real shares/.test(
@@ -180,18 +241,18 @@ export function analyzeClaims(
 
   if (!findings.length && legal && marketing) {
     findings.push({
-      title: "No direct contradiction detected",
+      title: "No strong mismatch found",
       severity: "low",
       marketingQuote: publicMarketing.trim().split(/\n+/)[0].slice(0, 160),
       termsQuote: officialTerms.trim().split(/\n+/)[0].slice(0, 160),
       explanation:
-        "The local rules did not find a strong mismatch between the language provided. This is a screening result, not a legal opinion; review nuanced or implied claims manually.",
+        "The checker did not find a strong mismatch between the two boxes. This is a screening result, not a final verdict; review nuanced or implied claims manually.",
       confidence: 63,
     });
   }
 
   const score =
-    findings[0]?.title === "No direct contradiction detected"
+    findings[0]?.title === "No strong mismatch found"
       ? 86
       : Math.max(
           18,
@@ -226,8 +287,8 @@ export function analyzeClaims(
     summary:
       highCount > 0
         ? `${highCount} high-severity promise${highCount === 1 ? "" : "s"} conflict with or exceed the supplied terms.`
-        : findings[0]?.title === "No direct contradiction detected"
-          ? "No direct contradiction detected by the local screening rules."
+        : findings[0]?.title === "No strong mismatch found"
+          ? "No strong mismatch found by the local screening rules."
           : "Potentially unsupported language was found and should be reviewed.",
     findings,
   };
@@ -309,5 +370,86 @@ export function buildXLayerPublication(
     highSeverityCount,
     summary: report.summary,
     timestamp: report.checkedAt,
+  });
+}
+
+export function buildPublicationChecklist(
+  report: AnalysisReport,
+  publication?: XLayerPublication | null,
+): PublicationChecklistItem[] {
+  const hasProvenance = Boolean(report.provenance);
+  const hasSourceLabel = Boolean(report.provenance?.sourceLabel);
+  const hasSourceUrl = Boolean(report.provenance?.sourceUrl);
+  const hasPayload = Boolean(publication);
+  const hasPublishedTx = Boolean(report.provenance?.chainRecord.txHash);
+  const published = report.provenance?.chainRecord.status === "published";
+
+  return publicationChecklistItemSchema.array().parse([
+    {
+      key: "source-label",
+      label: "Source label",
+      detail: hasSourceLabel
+        ? `Using ${report.provenance?.sourceLabel}`
+        : "Add a source label before publishing.",
+      complete: hasSourceLabel,
+    },
+    {
+      key: "source-url",
+      label: "Source URL",
+      detail: hasSourceUrl
+        ? "Source URL is attached to the report."
+        : "Add the deployed app or project source URL when available.",
+      complete: hasSourceUrl,
+    },
+    {
+      key: "analysis-provenance",
+      label: "Analysis provenance",
+      detail: hasProvenance
+        ? `Provider: ${report.provenance?.provider}, network: ${report.provenance?.network}.`
+        : "Run a report to create provenance.",
+      complete: hasProvenance,
+    },
+    {
+      key: "publication-payload",
+      label: "Publication payload",
+      detail: hasPayload
+        ? "Compact X Layer payload prepared."
+        : "Prepare the payload before testnet publish.",
+      complete: hasPayload,
+    },
+    {
+      key: "chain-record",
+      label: "Chain record",
+      detail: published
+        ? "Onchain record marked as published."
+        : hasPublishedTx
+          ? "Transaction hash exists, but the record is not marked published yet."
+          : "Awaiting a testnet broadcast and transaction hash.",
+      complete: published || hasPublishedTx,
+    },
+  ]);
+}
+
+export function buildPublishStatus(
+  report: AnalysisReport,
+  options?: {
+    txHash?: string;
+    explorerUrl?: string;
+    publishedAt?: string;
+  },
+): PublishStatus {
+  const payload = buildXLayerPublication(report);
+  const checklist = buildPublicationChecklist(report, payload);
+  const hasTx = Boolean(options?.txHash);
+  const hasPublishedAt = Boolean(options?.publishedAt);
+
+  return publishStatusSchema.parse({
+    status: hasTx && hasPublishedAt ? "published" : "ready",
+    network: payload.network,
+    payload,
+    checklist,
+    txHash: options?.txHash,
+    explorerUrl: options?.explorerUrl,
+    publishedAt: options?.publishedAt,
   });
 }

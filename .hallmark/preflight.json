@@ -1,0 +1,26 @@
+{
+  "scannedAt": "2026-08-15",
+  "fontStack": {
+    "sans": "DM Sans",
+    "serif": "Instrument Serif",
+    "mono": "DM Mono"
+  },
+  "palette": {
+    "background": "HSL custom paper/newsprint base",
+    "foreground": "HSL custom ink base",
+    "accent": "HSL custom accent base"
+  },
+  "motion": "motion-on",
+  "framework": "Vite + React",
+  "preserve": [
+    "existing font stack",
+    "existing newsprint palette family",
+    "existing motion stance"
+  ],
+  "introduce": [
+    "macrostructure",
+    "editorial rhythm",
+    "navigation and footer archetypes",
+    "slop-test gates"
+  ]
+}
