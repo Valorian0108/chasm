@@ -22,6 +22,20 @@ const FALLBACK_CONTRACT_ADDRESS =
   "0xa3a9fFddE592AE2D889562d9ca2B05d9Ae5634b3";
 const EVM_ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 
+async function requestJson<T>(
+  url: string,
+  apiLabel: string,
+  options?: RequestInit,
+): Promise<T> {
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    throw new Error(`${apiLabel} API returned ${response.status}`);
+  }
+
+  return (await response.json()) as T;
+}
+
 export type XLayerNetworkConfig = {
   name: "xlayer-testnet" | "xlayer-mainnet";
   chainId: number;
@@ -81,16 +95,10 @@ export function getDefaultSourceMetadata() {
 
 export async function getXLayerSetup(): Promise<XLayerSetup> {
   try {
-    const response = await fetch(`${API_BASE}/xlayer/config`);
-
-    if (!response.ok) {
-      throw new Error(`X Layer config API returned ${response.status}`);
-    }
-
-    const payload = (await response.json()) as {
+    const payload = await requestJson<{
       status?: string;
       xLayer?: XLayerSetup;
-    };
+    }>(`${API_BASE}/xlayer/config`, "X Layer config");
 
     if (!payload.xLayer) {
       throw new Error("X Layer config payload missing");
@@ -124,16 +132,10 @@ export async function getXLayerSetup(): Promise<XLayerSetup> {
 
 export async function getXLayerReadiness(): Promise<XLayerReadiness> {
   try {
-    const response = await fetch(`${API_BASE}/xlayer/readiness`);
-
-    if (!response.ok) {
-      throw new Error(`X Layer readiness API returned ${response.status}`);
-    }
-
-    const payload = (await response.json()) as {
+    const payload = await requestJson<{
       status?: string;
       readiness?: XLayerReadiness;
-    };
+    }>(`${API_BASE}/xlayer/readiness`, "X Layer readiness");
 
     if (!payload.readiness) {
       throw new Error("X Layer readiness payload missing");
@@ -180,19 +182,17 @@ export async function screenClaims(
   });
 
   try {
-    const response = await fetch(`${API_BASE}/analysis/screen`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
+    const payload = await requestJson<unknown>(
+      `${API_BASE}/analysis/screen`,
+      "Analysis",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(request),
       },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Analysis API returned ${response.status}`);
-    }
-
-    const payload = await response.json();
+    );
     return analysisReportSchema.parse(payload);
   } catch (error) {
     console.warn("Falling back to local browser analysis", error);
@@ -211,20 +211,18 @@ export async function preparePublication(
   report: AnalysisReport,
 ): Promise<XLayerPublication> {
   try {
-    const response = await fetch(`${API_BASE}/analysis/publish-prep`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
+    const payload = await requestJson<{ payload: XLayerPublication }>(
+      `${API_BASE}/analysis/publish-prep`,
+      "Publication",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(report),
       },
-      body: JSON.stringify(report),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Publication API returned ${response.status}`);
-    }
-
-    const payload = await response.json();
-    return payload.payload as XLayerPublication;
+    );
+    return payload.payload;
   } catch (error) {
     console.warn("Falling back to local publication prep", error);
     return buildXLayerPublication(report);
@@ -235,19 +233,17 @@ export async function preparePublishStatus(
   report: AnalysisReport,
 ): Promise<PublishStatus & { nextAction: string }> {
   try {
-    const response = await fetch(`${API_BASE}/analysis/publish`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
+    return await requestJson<PublishStatus & { nextAction: string }>(
+      `${API_BASE}/analysis/publish`,
+      "Publish",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(report),
       },
-      body: JSON.stringify(report),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Publish API returned ${response.status}`);
-    }
-
-    return response.json() as Promise<PublishStatus & { nextAction: string }>;
+    );
   } catch (error) {
     console.warn("Falling back to local publish status", error);
     const published = buildPublishStatus(report, {
@@ -273,22 +269,20 @@ export async function finalizePublishStatus(
   const parsedReceipt = publishReceiptSchema.parse(receipt);
 
   try {
-    const response = await fetch(`${API_BASE}/analysis/publish`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
+    return await requestJson<PublishStatus & { nextAction: string }>(
+      `${API_BASE}/analysis/publish`,
+      "Publish",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          report,
+          receipt: parsedReceipt,
+        }),
       },
-      body: JSON.stringify({
-        report,
-        receipt: parsedReceipt,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Publish API returned ${response.status}`);
-    }
-
-    return response.json() as Promise<PublishStatus & { nextAction: string }>;
+    );
   } catch (error) {
     console.warn("Falling back to local published status", error);
     const status = buildPublishStatus(report, {
@@ -310,22 +304,16 @@ export async function finalizePublishStatus(
 
 export async function saveReport(report: AnalysisReport) {
   try {
-    const response = await fetch(`${API_BASE}/analysis/records`, {
+    return await requestJson<{
+      status: "saved";
+      record: unknown;
+    }>(`${API_BASE}/analysis/records`, "Persistence", {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
       body: JSON.stringify(report),
     });
-
-    if (!response.ok) {
-      throw new Error(`Persistence API returned ${response.status}`);
-    }
-
-    return response.json() as Promise<{
-      status: "saved";
-      record: unknown;
-    }>;
   } catch (error) {
     console.warn("Falling back to local record storage", error);
     const localRecord = buildLocalRecord(report);
@@ -340,16 +328,10 @@ export async function saveReport(report: AnalysisReport) {
 
 export async function listRecords(): Promise<AnalysisRecord[]> {
   try {
-    const response = await fetch(`${API_BASE}/analysis/records`);
-
-    if (!response.ok) {
-      throw new Error(`Records API returned ${response.status}`);
-    }
-
-    const payload = (await response.json()) as {
+    const payload = await requestJson<{
       status?: string;
       records?: AnalysisRecord[];
-    };
+    }>(`${API_BASE}/analysis/records`, "Records");
 
     return payload.records ?? [];
   } catch (error) {

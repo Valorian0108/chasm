@@ -1,4 +1,4 @@
-import { loadEnvFiles } from "./load-env";
+import { loadEnvFiles } from "@workspace/env";
 import pino from "pino";
 
 loadEnvFiles();

@@ -6,6 +6,7 @@ import {
   type PublishStatus,
 } from "@workspace/api-zod";
 import {
+  getXLayerReportNetworkName,
   getXLayerNetworkConfig,
   getXLayerNetworkLabel,
 } from "../lib/xlayer-config";
@@ -16,18 +17,20 @@ export type PublishOptions = {
   receipt?: PublishReceipt;
 };
 
+function getNextAction(networkLabel: string, published: boolean): string {
+  return published
+    ? `Track the confirmed transaction on the ${networkLabel} explorer.`
+    : `Send the payload through the ${networkLabel} wallet flow to broadcast the transaction.`;
+}
+
 export function createXLayerPublisher() {
   return {
     prepare(report: AnalysisReport): PublishStatus & { nextAction: string } {
-      const networkName =
-        report.provenance?.network === "xlayer-mainnet"
-          ? "xlayer-mainnet"
-          : "xlayer-testnet";
+      const networkName = getXLayerReportNetworkName(report);
       const networkLabel = getXLayerNetworkLabel(networkName);
       return {
         ...buildPublishStatus(report),
-        nextAction:
-          `Send the payload through the ${networkLabel} wallet flow to broadcast the transaction.`,
+        nextAction: getNextAction(networkLabel, false),
       };
     },
 
@@ -38,10 +41,7 @@ export function createXLayerPublisher() {
       const receipt = options?.receipt
         ? publishReceiptSchema.parse(options.receipt)
         : undefined;
-      const networkName =
-        report.provenance?.network === "xlayer-mainnet"
-          ? "xlayer-mainnet"
-          : "xlayer-testnet";
+      const networkName = getXLayerReportNetworkName(report);
 
       const status = buildPublishStatus(report, {
         txHash: receipt?.txHash ?? report.provenance?.chainRecord.txHash,
@@ -61,10 +61,10 @@ export function createXLayerPublisher() {
           receipt?.txHash || report.provenance?.chainRecord.txHash
             ? "published"
             : status.status,
-        nextAction:
-          receipt?.txHash || report.provenance?.chainRecord.txHash
-            ? `Track the confirmed transaction on the ${networkLabel} explorer.`
-            : `Send the payload through the ${networkLabel} wallet flow to broadcast the transaction.`,
+        nextAction: getNextAction(
+          networkLabel,
+          Boolean(receipt?.txHash || report.provenance?.chainRecord.txHash),
+        ),
       };
     },
   };

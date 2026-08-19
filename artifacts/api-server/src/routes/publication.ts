@@ -3,17 +3,20 @@ import {
   analysisReportSchema,
   buildXLayerPublication,
 } from "@workspace/api-zod";
+import { parseWithValidation } from "../lib/validation";
 
 const router: IRouter = Router();
 
 router.post("/analysis/publish-prep", (req, res) => {
-  const parsed = analysisReportSchema.safeParse(req.body);
+  const parsed = parseWithValidation(
+    analysisReportSchema,
+    req.body,
+    res,
+    "Invalid analysis report",
+  );
 
   if (!parsed.success) {
-    return res.status(400).json({
-      error: "Invalid analysis report",
-      details: parsed.error.flatten(),
-    });
+    return;
   }
 
   const payload = buildXLayerPublication(parsed.data);

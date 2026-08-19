@@ -1,4 +1,4 @@
-import { loadEnvFiles } from "../env/load-env";
+import { loadEnvFiles } from "@workspace/env";
 import { defineConfig } from "drizzle-kit";
 import path from "path";
 
