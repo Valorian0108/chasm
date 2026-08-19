@@ -55,7 +55,9 @@ function toUnixSeconds(value: string): bigint {
   const parsed = Date.parse(value);
 
   if (Number.isNaN(parsed)) {
-    return BigInt(Math.floor(Date.now() / 1000));
+    throw new Error(
+      `Invalid timestamp for X Layer publish: ${value}. The onchain record must carry the report timestamp.`,
+    );
   }
 
   return BigInt(Math.floor(parsed / 1000));

@@ -16,6 +16,12 @@ router.post("/analysis/publish-prep", (req, res) => {
     });
   }
 
+  if (!parsed.data.provenance) {
+    return res.status(400).json({
+      error: "Report provenance is required to build a publication payload",
+    });
+  }
+
   const payload = buildXLayerPublication(parsed.data);
 
   return res.json({

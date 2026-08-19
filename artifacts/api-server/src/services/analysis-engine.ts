@@ -1,4 +1,5 @@
 import { loadEnvFiles } from "../lib/load-env";
+import { logger } from "../lib/logger";
 import {
   analyzeClaims,
   type AnalysisRequest,
@@ -10,11 +11,15 @@ loadEnvFiles();
 
 export type AnalysisProvider = "local" | "ai" | "fallback";
 
+export type AnalysisResult = {
+  report: AnalysisReport;
+  provider: AnalysisProvider;
+  fallbackReason?: string;
+};
+
 export type AnalysisEngine = {
   provider: AnalysisProvider;
-  analyze: (
-    request: AnalysisRequest,
-  ) => Promise<{ report: AnalysisReport; provider: AnalysisProvider }>;
+  analyze: (request: AnalysisRequest) => Promise<AnalysisResult>;
 };
 
 function normalizeAiContent(content: string) {
@@ -40,11 +45,16 @@ export function createAnalysisEngine(): AnalysisEngine {
     const aiModel = process.env.AI_MODEL ?? process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
 
     if (!aiBaseUrl || !aiApiKey) {
+      const fallbackReason =
+        "AI provider is selected but AI_API_KEY/OPENAI_API_KEY is not configured";
+      logger.warn({ fallbackReason }, "Using local screening rules");
+
       return {
         provider: "fallback",
         analyze: async (request) => ({
           report: analyzeClaims(request.officialTerms, request.publicMarketing),
           provider: "fallback",
+          fallbackReason,
         }),
       };
     }
@@ -106,13 +116,15 @@ export function createAnalysisEngine(): AnalysisEngine {
             provider: "ai",
           };
         } catch (error) {
-          console.warn("Falling back to local screening", error);
+          logger.warn({ err: error }, "Falling back to local screening");
           return {
             report: analyzeClaims(
               request.officialTerms,
               request.publicMarketing,
             ),
             provider: "fallback",
+            fallbackReason:
+              error instanceof Error ? error.message : String(error),
           };
         }
       },
