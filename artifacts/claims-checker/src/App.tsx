@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode } from 'react';
 import { AlertTriangle, ArrowRight, Check, CheckCircle2, ChevronDown, ClipboardCheck, FileText, Fingerprint, Info, Loader2, LockKeyhole, RotateCcw, Scale, ShieldCheck, Sparkles, TriangleAlert, X } from 'lucide-react';
-import { buildPublicationChecklist, buildXLayerPublication, type Finding, type AnalysisReport as Report, type Severity } from '@workspace/api-zod';
+import { buildPublicationChecklist, buildXLayerPublication, MAX_SOURCE_TEXT_CHARS, type Finding, type AnalysisReport as Report, type Severity } from '@workspace/api-zod';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -251,6 +251,13 @@ function Workspace({
       setError('Add at least 25 characters to both sources before running a check.');
       return;
     }
+    if (
+      legalTerms.trim().length > MAX_SOURCE_TEXT_CHARS ||
+      marketingCopy.trim().length > MAX_SOURCE_TEXT_CHARS
+    ) {
+      setError(`Each source must be ${MAX_SOURCE_TEXT_CHARS.toLocaleString()} characters or fewer. Paste the section that carries the claim.`);
+      return;
+    }
     setError('');
     setIsChecking(true);
     window.setTimeout(async () => {
@@ -260,6 +267,8 @@ function Workspace({
           sourceUrl: sourceUrl.trim() || undefined,
           targetNetwork: xLayerSetup?.targetNetwork ?? 'xlayer-testnet',
         }));
+      } catch {
+        setError('The check could not be completed. Review the sources and try again.');
       } finally {
         setIsChecking(false);
       }

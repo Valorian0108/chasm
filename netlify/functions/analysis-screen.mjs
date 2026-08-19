@@ -2,6 +2,80 @@ const JSON_HEADERS = {
   "content-type": "application/json",
 };
 
+const MAX_SOURCE_TEXT_CHARS = 20_000;
+const MAX_SOURCE_LABEL_CHARS = 200;
+const MAX_URL_CHARS = 2_048;
+const MAX_BODY_BYTES = 256 * 1024;
+
+function isHttpUrl(value) {
+  try {
+    const { protocol } = new URL(value);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validates the untrusted request body and returns either an error message or a
+ * normalized request with bounded field sizes.
+ */
+function parseScreeningRequest(body) {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return { error: "Request body must be a JSON object" };
+  }
+
+  const { officialTerms, publicMarketing, sourceLabel, sourceUrl, targetNetwork } = body;
+
+  if (typeof officialTerms !== "string" || typeof publicMarketing !== "string") {
+    return { error: "officialTerms and publicMarketing are required" };
+  }
+
+  const terms = officialTerms.trim();
+  const marketing = publicMarketing.trim();
+
+  if (!terms || !marketing) {
+    return { error: "officialTerms and publicMarketing are required" };
+  }
+
+  if (terms.length > MAX_SOURCE_TEXT_CHARS || marketing.length > MAX_SOURCE_TEXT_CHARS) {
+    return {
+      error: `officialTerms and publicMarketing must each be ${MAX_SOURCE_TEXT_CHARS} characters or fewer`,
+    };
+  }
+
+  if (
+    sourceLabel !== undefined &&
+    (typeof sourceLabel !== "string" || sourceLabel.length > MAX_SOURCE_LABEL_CHARS)
+  ) {
+    return { error: "sourceLabel must be a string of 200 characters or fewer" };
+  }
+
+  if (
+    sourceUrl !== undefined &&
+    (typeof sourceUrl !== "string" || sourceUrl.length > MAX_URL_CHARS || !isHttpUrl(sourceUrl))
+  ) {
+    return { error: "sourceUrl must be an http or https URL" };
+  }
+
+  if (
+    targetNetwork !== undefined &&
+    !["local", "xlayer-testnet", "xlayer-mainnet"].includes(targetNetwork)
+  ) {
+    return { error: "targetNetwork is not supported" };
+  }
+
+  return {
+    request: {
+      officialTerms: terms,
+      publicMarketing: marketing,
+      sourceLabel,
+      sourceUrl,
+      targetNetwork,
+    },
+  };
+}
+
 function json(statusCode, body) {
   return {
     statusCode,
@@ -200,19 +274,29 @@ export async function handler(event) {
     return json(405, { error: "Method not allowed" });
   }
 
-  let request;
+  const rawBody = event.isBase64Encoded
+    ? Buffer.from(event.body || "", "base64").toString("utf8")
+    : event.body || "{}";
+
+  if (Buffer.byteLength(rawBody, "utf8") > MAX_BODY_BYTES) {
+    return json(413, { error: "Request body is too large" });
+  }
+
+  let body;
 
   try {
-    request = JSON.parse(event.body || "{}");
+    body = JSON.parse(rawBody);
   } catch {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  if (!request.officialTerms || !request.publicMarketing) {
-    return json(400, {
-      error: "officialTerms and publicMarketing are required",
-    });
+  const parsed = parseScreeningRequest(body);
+
+  if (parsed.error) {
+    return json(400, { error: parsed.error });
   }
+
+  const request = parsed.request;
 
   const aiApiKey = process.env.OPENAI_API_KEY || process.env.AI_API_KEY;
   const aiBaseUrl = process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL || "https://api.openai.com";

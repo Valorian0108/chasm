@@ -4,10 +4,11 @@ import {
   publishReceiptSchema,
 } from "@workspace/api-zod";
 import { xLayerPublisher } from "../services/xlayer-publisher";
+import { rateLimit } from "../lib/security";
 
 const router: IRouter = Router();
 
-router.post("/analysis/publish", (req, res) => {
+router.post("/analysis/publish", rateLimit({ windowMs: 60_000, max: 30 }), (req, res) => {
   const parsed = analysisReportSchema.safeParse(req.body?.report ?? req.body);
 
   if (!parsed.success) {

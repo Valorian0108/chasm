@@ -5,11 +5,14 @@ import {
   buildXLayerPublication,
 } from "@workspace/api-zod";
 import { db, analysisRecordsTable, type InsertAnalysisRecord } from "@workspace/db";
+import { rateLimit, requireApiToken } from "../lib/security";
 
 const router: IRouter = Router();
 const memoryStore: InsertAnalysisRecord[] = [];
 
-router.post("/analysis/records", async (req, res) => {
+const recordsRateLimit = rateLimit({ windowMs: 60_000, max: 30 });
+
+router.post("/analysis/records", recordsRateLimit, requireApiToken, async (req, res) => {
   const parsed = analysisReportSchema.safeParse(req.body);
 
   if (!parsed.success) {
@@ -52,7 +55,7 @@ router.post("/analysis/records", async (req, res) => {
   return res.status(201).json({ status: "saved", record });
 });
 
-router.get("/analysis/records", (_req, res) => {
+router.get("/analysis/records", recordsRateLimit, requireApiToken, (_req, res) => {
   if (db) {
     return db
       .select()
